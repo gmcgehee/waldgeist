@@ -1,14 +1,14 @@
-#include <stdio.h>
+#include <iostream>
 #include "bitboard.h"
 
 int main() {
 
-    boardState board;
+    BoardState board;
 
     board.bBishop = 292092ULL;
     board.bKing = 2002ULL;
 
-    printf("Break here");
+    std::cout << "hello" << std::endl;
  
 
     return 0;
