@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdint>
 #include <map>
+#include <string>
 
 #ifndef BITBOARD_H
 #define BITBOARD_H
@@ -38,14 +39,12 @@ struct BoardState
     u16 fullMoves = 0U; // 16 bits is enough; games can go on for very long, but not 2 ^ 32 - 1 = 4294967295 moves
 
     bool sideToPlay = false; // white is 0, black is 1
-
 };
 
 class GameState
 {
 
 public:
-    
     BoardState state;
 
     GameState(std::string fen = "")
@@ -61,13 +60,19 @@ public:
         }
     }
 
-    static u8 squareToString(std::string square) {
-        // Bit 0 is a8 on a chess board
+    /**
+     * @brief Returns the lshamt to access a given square. h0
+     * @param square
+     * @returns
+     */
 
+    int squareToNumber(std::string square)
+    {
+        // Bit 0 is a8 on a chess board; but a8 is index 7
 
         /*
-        
-        ▼ bit 63
+
+             ▼ bit 63
            8 0 0 0 0 0 0 0 0
            7 0 0 0 0 0 0 0 0
            6 0 0 0 0 0 0 0 0
@@ -76,30 +81,36 @@ public:
            3 0 0 0 0 0 0 0 0
            2 0 0 0 0 0 0 0 0
            1 0 0 0 0 0 0 0 0
-                        ^ bit 0 
+                           ^ bit 0
+             a b c d e f g h
+
+             index 63      ▼
+           8 0 0 0 0 0 0 0 0
+           7 0 0 0 0 0 0 0 0
+           6 0 0 0 0 0 0 0 0
+           5 0 0 0 0 0 0 0 0
+           4 0 0 0 0 0 0 0 0
+           3 0 0 0 0 0 0 0 0
+           2 0 0 0 0 0 0 0 0
+           1 0 0 0 0 0 0 0 0
+             ^ index 0...somehow
              a b c d e f g h
         */
 
         // a8 = 63
         // h8 = 0
-        // number = 63 - ()
+        // number = 63 - (letter_val * (row - 1))
 
-        std::map<char, u8> letter_value 
-        {
-            {'a', 1},
-            {'b', 1},
-            {'c', 1},
-            {'d', 1},
-            {'e', 1},
-            {'f', 1},
-            {'g', 1},
-            {'h', 1},
-        };
+        //
 
-        u8 bit_number;
+        char file = square[0];
+        int file_value = file - 'a'; // gives 0 - 7 value  (GPT idea)
+
+        int row = square[1] - '0'; // somehow this converts the types. Genuinely no idea how. Subtract a char from a char you get at int. Nice.
+
+        int bit_number = (8 * (row - 1) + (8 - file_value)) - 1;
 
         return bit_number;
-
     }
 
     void setupDefaultBoard()
@@ -109,7 +120,7 @@ public:
         state = loadFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     }
 
-    static BoardState loadFromFen(std::string const &fen)
+    BoardState loadFromFen(std::string const &fen)
     {
 
         // White pieces are uppercase, black are lowercase
@@ -124,8 +135,10 @@ public:
 
         u8 fieldnumber = 0;
 
-        for (char c : fen)
+        for (int i = 0; i < fen.length(); i++)
         {
+
+            char c = fen[i];
 
             if (c == ' ')
             {
@@ -220,24 +233,63 @@ public:
 
                 continue;
             }
-            else if (fieldnumber == 2) {
+            else if (fieldnumber == 2)
+            {
                 // right nibble keeps track of castling rights (white kingside, white queenside, black kingside, black queenside)
 
-                if (c == 'K') {
-                    board.castlingRights |= (1 << 3);   // is the speed difference worthwhile? should I precompute these values? it would look less readable.
-                } else if (c == 'Q') {
+                if (c == 'K')
+                {
+                    board.castlingRights |= (1 << 3); // is the speed difference worthwhile? should I precompute these values? it would look less readable.
+                }
+                else if (c == 'Q')
+                {
                     board.castlingRights |= (1 << 2);
-                } else if (c == 'k') {
+                }
+                else if (c == 'k')
+                {
                     board.castlingRights |= (1 << 1);
-                } else if (c == 'q') {
+                }
+                else if (c == 'q')
+                {
                     board.castlingRights |= 1;
-                } else {
+                }
+                else
+                {
                     std::cout << "C: " << c << std::endl;
                     throw std::invalid_argument("Unexpected value in FEN field 'castling rights'.");
                 }
-
-            } else if (fieldnumber == 3) {
-
+            }
+            else if (fieldnumber == 3)
+            {
+                if (c == '-')
+                {
+                    board.enPassantSquare = 128; // TEMPORARY: if there is no en passant square, have some number too big to be on the board
+                    continue;
+                }
+                else if (std::isalpha(c))
+                {
+                    std::string square;
+                    square += c;
+                    square += fen[i + 1]; // the cleanest way to add two chars to a string
+                    int index = squareToNumber(square);
+                    board.enPassantSquare = index;      // this will be 63 if the square is a8 and 0 if it is h1
+                }
+            }
+            else if (fieldnumber == 4)
+            {
+                if (fen[i + 1] == ' ') {
+                    board.halfMoves = c - '0'; // again, this converts c to an int
+                } else {
+                    std::string halfMoveCounter;
+                    halfMoveCounter += c;
+                    halfMoveCounter += fen[i + 1];
+                    board.halfMoves = std::stoi(halfMoveCounter);
+                }
+            }
+            else if (fieldnumber == 5) {
+                std::string fullMoveCounter = fen.substr(i, fen.length() - i);
+                board.fullMoves = std::stoi(fullMoveCounter);
+                break; // do not run after field 5
             }
         }
 
