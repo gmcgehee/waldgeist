@@ -3,12 +3,16 @@
 
 int main() {
 
-    std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    std::string invalid_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR f KQkq - 0 1";
+    std::string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 12 122";
     
-    GameState *game = new GameState(invalid_fen);
+    GameState *game = new GameState(fen);
 
     // game->printBoardState(BoardState game.state); // idk how to make this work
+
+    // int test_square = game->squareToNumber("g2");
+    // std::cout << "Test square: " << test_square << std::endl;
+
+    std::cout << "Program ran successfully!" << '\n';
 
     return 0;
 }
