@@ -284,6 +284,7 @@ public:
                     halfMoveCounter += c;
                     halfMoveCounter += fen[i + 1];
                     board.halfMoves = std::stoi(halfMoveCounter);
+                    i++; // necessary to make it skip
                 }
             }
             else if (fieldnumber == 5) {
