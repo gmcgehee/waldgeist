@@ -47,7 +47,7 @@ public:
         }
 
         else {
-            
+
         }
     }
 
@@ -56,7 +56,7 @@ public:
         // default FEN : rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     }
 
-    BoardState loadFromFen(std::string fen)
+    BoardState loadFromFen(std::string& fen)
     {
 
         // White pieces are uppercase, black are lowercase
