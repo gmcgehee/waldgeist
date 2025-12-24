@@ -453,7 +453,11 @@ public:
         fen.append(" ");
 
         // En passant square
-        std::string enPassantSquare = indexToSquare(state.enPassantSquare);
+        std::string enPassantSquare;
+        
+        if (state.enPassantSquare <= 63) enPassantSquare = indexToSquare(state.enPassantSquare);
+        else enPassantSquare = "-";
+        
         fen.append(enPassantSquare);
 
         fen.append(" ");
