@@ -278,6 +278,10 @@ public:
                 {
                     board.castlingRights |= 1;
                 }
+                else if (c == '-')
+                {
+                    board.castlingRights = 128;
+                }
                 else
                 {
                     std::cout << "C: " << c << std::endl;
@@ -421,7 +425,8 @@ public:
             fen.append(toAppend);
         }
 
-        if (blankCount > 0) fen.append(std::to_string(blankCount)); // edge case where there are empty squares on the bottom row
+        if (blankCount > 0)
+            fen.append(std::to_string(blankCount)); // edge case where there are empty squares on the bottom row
 
         // Append side to play to FEN
         fen.append(" ");
@@ -430,34 +435,34 @@ public:
         fen.append(" ");
 
         // Append castling rights to FEN
-        if (state.castlingRights & 8)
-        {
-            fen.append("K");
-        }
+        if (state.castlingRights > 63)
+            fen.append("-");
 
-        if (state.castlingRights & 4)
+        else
         {
-            fen.append("Q");
-        }
+            if (state.castlingRights & 8)
+                fen.append("K");
 
-        if (state.castlingRights & 2)
-        {
-            fen.append("k");
-        }
+            if (state.castlingRights & 4)
+                fen.append("Q");
 
-        if (state.castlingRights & 1)
-        {
-            fen.append("q");
+            if (state.castlingRights & 2)
+                fen.append("k");
+
+            if (state.castlingRights & 1)
+                fen.append("q");
         }
 
         fen.append(" ");
 
         // En passant square
         std::string enPassantSquare;
-        
-        if (state.enPassantSquare <= 63) enPassantSquare = indexToSquare(state.enPassantSquare);
-        else enPassantSquare = "-";
-        
+
+        if (state.enPassantSquare <= 63)
+            enPassantSquare = indexToSquare(state.enPassantSquare);
+        else
+            enPassantSquare = "-";
+
         fen.append(enPassantSquare);
 
         fen.append(" ");
@@ -473,16 +478,50 @@ public:
         return fen;
     }
 
-    void printBoardState(BoardState state)
+    std::string getPrintableBoardState(BoardState state)
     {
         // Bitboard blackBoard = state.bBishop ^ state.bKnight ^ state.bPawn ^ state.bQueen ^ state.bRook;
         // Bitboard whiteBoard = state.wBishop ^ state.wKnight ^ state.wPawn ^ state.wQueen ^ state.wRook;
         // Bitboard fullBoard = blackBoard ^ whiteBoard;
+        std::string fen = exportFen(state);
         std::string printableBoard;
-        while (true)
+
+        for (int i = 0; i <= fen.length(); i++)
         {
-            break;
+            char c = fen[i];
+
+            if (c == ' ')
+            {
+                return printableBoard;
+            }
+            else if (c == '/')
+            {
+                printableBoard.append("\n");
+            }
+            else if (std::isdigit(c))
+            {
+                for (int j = 0; j < c - '0'; j++)
+                {
+                    printableBoard.append(" .");
+                }
+            }
+            else if (std::isalpha(c))
+            {
+                std::string to_append(1, c);
+                to_append = " " + to_append;
+                printableBoard.append(to_append);
+            }
+            else
+            {
+                // if it isn't a /, ' ', digit, or otherwise--what could it be?
+
+                // throw error
+                throw std::invalid_argument("Internal FEN conversion output invalid character.");
+                return printableBoard;
+            }
         }
+
+        return printableBoard;
     }
 };
 
