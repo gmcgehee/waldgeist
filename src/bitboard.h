@@ -2,32 +2,33 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <cctype>
 
 #ifndef BITBOARD_H
 #define BITBOARD_H
 
 using u8 = uint8_t;
 using u16 = uint16_t;
-using i64 = uint64_t;
+using Bitboard = uint64_t;
 
 struct BoardState
 {
 
     // Bitboard of 1s and 0s showing every current position of pieces
 
-    i64 wPawn = 0ULL;
-    i64 wKnight = 0ULL;
-    i64 wBishop = 0ULL;
-    i64 wRook = 0ULL;
-    i64 wQueen = 0ULL;
-    i64 wKing = 0ULL;
+    Bitboard wPawn = 0ULL;
+    Bitboard wKnight = 0ULL;
+    Bitboard wBishop = 0ULL;
+    Bitboard wRook = 0ULL;
+    Bitboard wQueen = 0ULL;
+    Bitboard wKing = 0ULL;
 
-    i64 bPawn = 0ULL;
-    i64 bKnight = 0ULL;
-    i64 bBishop = 0ULL;
-    i64 bRook = 0ULL;
-    i64 bQueen = 0ULL;
-    i64 bKing = 0ULL;
+    Bitboard bPawn = 0ULL;
+    Bitboard bKnight = 0ULL;
+    Bitboard bBishop = 0ULL;
+    Bitboard bRook = 0ULL;
+    Bitboard bQueen = 0ULL;
+    Bitboard bKing = 0ULL;
 
     u8 castlingRights = 0U; // ok... nice
 
@@ -66,7 +67,7 @@ public:
      * @returns
      */
 
-    int squareToNumber(std::string square)
+    int squareToIndex(std::string square)
     {
         // Bit 0 is a8 on a chess board; but a8 is index 7
 
@@ -103,14 +104,36 @@ public:
 
         //
 
-        char file = square[0];
-        int file_value = file - 'a'; // gives 0 - 7 value  (GPT idea)
+        char fileChar = square[0];
+        int file = fileChar - 'a'; // gives 0 - 7 value  (GPT idea)
 
         int row = square[1] - '0'; // somehow this converts the types. Genuinely no idea how. Subtract a char from a char you get at int. Nice.
 
-        int bit_number = (8 * (row - 1) + (8 - file_value)) - 1;
+        int bit_number = (8 * (row - 1) + (8 - file)) - 1;
 
         return bit_number;
+    }
+
+    std::string indexToSquare(int index)
+    {
+        std::string square = "";
+        index += 1;
+
+        int fileNum = (8 - (index % 8)) % 8;
+        std::string fileString(1, 'a' + fileNum);
+        square.append(fileString);
+
+        // index = (8 * (row - 1) + (8 - file)) - 1
+        // index + 1 = (8 * (row - 1) + (8 - file))         // added 1
+        // index + 1 - (8 - file) = 8 * (row - 1)
+        // (index + 1 - (8 - file)) / 8 = row - 1
+        // (index + 1 - (8 - file)) / 8 + 1 = row
+
+        int row = (index + 1 - (8 - fileNum)) / 8 + 1;
+        std::string rowString = std::to_string(row);
+        square.append(rowString);
+
+        return square;
     }
 
     void setupDefaultBoard()
@@ -150,8 +173,9 @@ public:
             {
                 if (std::isdigit(static_cast<unsigned char>(c)))
                 {
-                    curr_file += (int)c;
+                    curr_file += c - '0'; // was that it
                 }
+
                 else if (c == '/')
                 {
 
@@ -163,8 +187,9 @@ public:
                 {
 
                     // is this the most efficient/best practice way to do this? row 0 file 0 is lshift 63
-                    u8 shamt = 63 - ((curr_row * 8) + curr_file);
-                    i64 *piecetype_to_modify = nullptr;
+                    u8 shamt = 63 - (8 * curr_row + curr_file);
+
+                    Bitboard *piecetype_to_modify = nullptr;
 
                     switch (c)
                     {
@@ -271,15 +296,19 @@ public:
                     std::string square;
                     square += c;
                     square += fen[i + 1]; // the cleanest way to add two chars to a string
-                    int index = squareToNumber(square);
-                    board.enPassantSquare = index;      // this will be 63 if the square is a8 and 0 if it is h1
+                    int index = squareToIndex(square);
+
+                    board.enPassantSquare = index; // this will be 63 if the square is a8 and 0 if it is h1
                 }
             }
             else if (fieldnumber == 4)
             {
-                if (fen[i + 1] == ' ') {
+                if (fen[i + 1] == ' ')
+                {
                     board.halfMoves = c - '0'; // again, this converts c to an int
-                } else {
+                }
+                else
+                {
                     std::string halfMoveCounter;
                     halfMoveCounter += c;
                     halfMoveCounter += fen[i + 1];
@@ -287,7 +316,8 @@ public:
                     i++; // necessary to make it skip
                 }
             }
-            else if (fieldnumber == 5) {
+            else if (fieldnumber == 5)
+            {
                 std::string fullMoveCounter = fen.substr(i, fen.length() - i);
                 board.fullMoves = std::stoi(fullMoveCounter);
                 break; // do not run after field 5
@@ -297,13 +327,158 @@ public:
         return board;
     }
 
-    std::string exportFen()
+    std::string exportFen(BoardState state)
     {
-        return "";
+        Bitboard blackBoard = state.bBishop ^ state.bKnight ^ state.bPawn ^ state.bQueen ^ state.bRook ^ state.bKing;
+        Bitboard whiteBoard = state.wBishop ^ state.wKnight ^ state.wPawn ^ state.wQueen ^ state.wRook ^ state.wKing;
+        Bitboard fullBoard = blackBoard ^ whiteBoard;
+
+        std::string fen = "";
+        int blankCount = 0;
+
+        for (int i = 63; i >= 0; i--)
+        {
+
+            Bitboard val = 1ULL << i;
+            std::string toAppend;
+
+            if ((i + 1) % 8 == 0 && i < 63) // this is lowkey unreadable
+            {
+                if (blankCount > 0)
+                {
+                    fen.append(std::to_string(blankCount)); // if we have several blank
+                    blankCount = 0;
+                }
+                fen.append("/");
+            }
+
+            if (val & fullBoard)
+            {
+                if (blankCount > 0)
+                {
+                    fen.append(std::to_string(blankCount)); // if we have several blank
+                    blankCount = 0;
+                }
+            }
+            else
+            {
+                blankCount += 1;
+                continue;
+            }
+
+            if (val & state.bBishop)
+            {
+                toAppend = "b";
+            }
+            else if (val & state.bKing)
+            {
+                toAppend = "k";
+            }
+            else if (val & state.bKnight)
+            {
+                toAppend = "n";
+            }
+            else if (val & state.bPawn)
+            {
+                toAppend = "p";
+            }
+            else if (val & state.bQueen)
+            {
+                toAppend = "q";
+            }
+            else if (val & state.bRook)
+            {
+                toAppend = "r";
+            }
+            else if (val & state.wBishop)
+            {
+                toAppend = "B";
+            }
+            else if (val & state.wKing)
+            {
+                toAppend = "K";
+            }
+            else if (val & state.wKnight)
+            {
+                toAppend = "N";
+            }
+            else if (val & state.wPawn)
+            {
+                toAppend = "P";
+            }
+            else if (val & state.wQueen)
+            {
+                toAppend = "Q";
+            }
+            else if (val & state.wRook)
+            {
+                toAppend = "R";
+            }
+            else
+            {
+                // what do do if the current square is blank
+            }
+            fen.append(toAppend);
+        }
+
+        if (blankCount > 0) fen.append(std::to_string(blankCount)); // edge case where there are empty squares on the bottom row
+
+        // Append side to play to FEN
+        fen.append(" ");
+        std::string to_play = (state.sideToPlay) ? "b" : "w"; // remember, false means white is playing
+        fen.append(to_play);
+        fen.append(" ");
+
+        // Append castling rights to FEN
+        if (state.castlingRights & 8)
+        {
+            fen.append("K");
+        }
+
+        if (state.castlingRights & 4)
+        {
+            fen.append("Q");
+        }
+
+        if (state.castlingRights & 2)
+        {
+            fen.append("k");
+        }
+
+        if (state.castlingRights & 1)
+        {
+            fen.append("q");
+        }
+
+        fen.append(" ");
+
+        // En passant square
+        std::string enPassantSquare = indexToSquare(state.enPassantSquare);
+        fen.append(enPassantSquare);
+
+        fen.append(" ");
+
+        std::string halfmoveCounter = std::to_string(state.halfMoves);
+        fen.append(halfmoveCounter);
+
+        fen.append(" ");
+
+        std::string fullmoveCounter = std::to_string(state.fullMoves);
+        fen.append(fullmoveCounter);
+
+        return fen;
     }
 
     void printBoardState(BoardState state)
     {
+        // Bitboard blackBoard = state.bBishop ^ state.bKnight ^ state.bPawn ^ state.bQueen ^ state.bRook;
+        // Bitboard whiteBoard = state.wBishop ^ state.wKnight ^ state.wPawn ^ state.wQueen ^ state.wRook;
+        // Bitboard fullBoard = blackBoard ^ whiteBoard;
+        std::string printableBoard;
+        while (true)
+        {
+            break;
+        }
     }
 };
 
