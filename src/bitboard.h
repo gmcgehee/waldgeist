@@ -37,7 +37,7 @@ struct BoardState
     u8 halfMoves = 0U; // one byte can hold up to 255, which is easily in a uint8
                        // but this means 50 plays per side
 
-    u16 fullMoves = 0U; // 16 bits is enough; games can go on for very long, but not 2 ^ 32 - 1 = 4294967295 moves
+    u16 fullMoves = 0U; // 16 bits is enough; games can go on for very long, but not 2 ** 32 - 1 = 4294967295 moves
 
     bool sideToPlay = false; // white is 0, black is 1
 };
@@ -62,18 +62,15 @@ public:
     }
 
     /**
-     * @brief Returns the lshamt to access a given square. h0
+     * @brief Returns the index of a given square. a1 = 0, h1 = 7, a8 = 56, h8 = 63
      * @param square
      * @returns
      */
 
     int squareToIndex(std::string square)
     {
-        // Bit 0 is a8 on a chess board; but a8 is index 7
-
         /*
-
-             ▼ bit 63
+                  index 63 ▼
            8 0 0 0 0 0 0 0 0
            7 0 0 0 0 0 0 0 0
            6 0 0 0 0 0 0 0 0
@@ -82,34 +79,17 @@ public:
            3 0 0 0 0 0 0 0 0
            2 0 0 0 0 0 0 0 0
            1 0 0 0 0 0 0 0 0
-                           ^ bit 0
-             a b c d e f g h
-
-             index 63      ▼
-           8 0 0 0 0 0 0 0 0
-           7 0 0 0 0 0 0 0 0
-           6 0 0 0 0 0 0 0 0
-           5 0 0 0 0 0 0 0 0
-           4 0 0 0 0 0 0 0 0
-           3 0 0 0 0 0 0 0 0
-           2 0 0 0 0 0 0 0 0
-           1 0 0 0 0 0 0 0 0
-             ^ index 0...somehow
+             ^ index 0
              a b c d e f g h
         */
 
-        // a8 = 63
-        // h8 = 0
-        // number = 63 - (letter_val * (row - 1))
-
-        //
 
         char fileChar = square[0];
         int file = fileChar - 'a'; // gives 0 - 7 value  (GPT idea)
 
-        int row = square[1] - '0'; // somehow this converts the types. Genuinely no idea how. Subtract a char from a char you get at int. Nice.
+        int row = square[1] - '0'; // somehow this converts the types. Genuinely no idea how. Subtract a char from a char you get an int. Nice.
 
-        int bit_number = (8 * (row - 1) + (8 - file)) - 1;
+        int bit_number = 8 * (row - 1) + file;
 
         return bit_number;
     }
@@ -117,19 +97,13 @@ public:
     std::string indexToSquare(int index)
     {
         std::string square = "";
-        index += 1;
+        // index += 1;
 
-        int fileNum = (8 - (index % 8)) % 8;
+        int fileNum = index % 8;
         std::string fileString(1, 'a' + fileNum);
         square.append(fileString);
 
-        // index = (8 * (row - 1) + (8 - file)) - 1
-        // index + 1 = (8 * (row - 1) + (8 - file))         // added 1
-        // index + 1 - (8 - file) = 8 * (row - 1)
-        // (index + 1 - (8 - file)) / 8 = row - 1
-        // (index + 1 - (8 - file)) / 8 + 1 = row
-
-        int row = (index + 1 - (8 - fileNum)) / 8 + 1;
+        int row = (index - fileNum) / 8 + 1;
         std::string rowString = std::to_string(row);
         square.append(rowString);
 
@@ -333,9 +307,9 @@ public:
 
     std::string exportFen(BoardState state)
     {
-        Bitboard blackBoard = state.bBishop ^ state.bKnight ^ state.bPawn ^ state.bQueen ^ state.bRook ^ state.bKing;
-        Bitboard whiteBoard = state.wBishop ^ state.wKnight ^ state.wPawn ^ state.wQueen ^ state.wRook ^ state.wKing;
-        Bitboard fullBoard = blackBoard ^ whiteBoard;
+        Bitboard blackBoard = state.bBishop | state.bKnight | state.bPawn | state.bQueen | state.bRook | state.bKing;
+        Bitboard whiteBoard = state.wBishop | state.wKnight | state.wPawn | state.wQueen | state.wRook | state.wKing;
+        Bitboard fullBoard = blackBoard | whiteBoard;
 
         std::string fen = "";
         int blankCount = 0;
@@ -480,9 +454,6 @@ public:
 
     std::string getPrintableBoardState(BoardState state)
     {
-        // Bitboard blackBoard = state.bBishop ^ state.bKnight ^ state.bPawn ^ state.bQueen ^ state.bRook;
-        // Bitboard whiteBoard = state.wBishop ^ state.wKnight ^ state.wPawn ^ state.wQueen ^ state.wRook;
-        // Bitboard fullBoard = blackBoard ^ whiteBoard;
         std::string fen = exportFen(state);
         std::string printableBoard;
 
