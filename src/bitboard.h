@@ -3,44 +3,29 @@
 #include <map>
 #include <string>
 #include <cctype>
+#include "types.hpp"
 
 #ifndef BITBOARD_H
 #define BITBOARD_H
 
-using u8 = uint8_t;
-using u16 = uint16_t;
-using Bitboard = uint64_t;
+constexpr Bitboard FILE_A = 0x0101010101010101ULL;
+constexpr Bitboard FILE_B = 0x0202020202020202ULL;
+constexpr Bitboard FILE_C = 0x0404040404040404ULL;
+constexpr Bitboard FILE_D = 0x0808080808080808ULL;
+constexpr Bitboard FILE_E = 0x1010101010101010ULL;
+constexpr Bitboard FILE_F= 0x2020202020202020ULL;
+constexpr Bitboard FILE_G = 0x4040404040404040ULL;
+constexpr Bitboard FILE_H = 0x8080808080808080ULL;
 
-struct BoardState
-{
+constexpr Bitboard RANK_1 = 0x00000000000000FFULL;
+constexpr Bitboard RANK_2 = 0x000000000000FF00ULL;
+constexpr Bitboard RANK_3 = 0x0000000000FF0000ULL;
+constexpr Bitboard RANK_4 = 0x00000000FF000000ULL;
+constexpr Bitboard RANK_5 = 0x000000FF00000000ULL;
+constexpr Bitboard RANK_6 = 0x0000FF0000000000ULL;
+constexpr Bitboard RANK_7 = 0x00FF000000000000ULL;
+constexpr Bitboard RANK_8 = 0xFF00000000000000ULL;
 
-    // Bitboard of 1s and 0s showing every current position of pieces
-
-    Bitboard wPawn = 0ULL;
-    Bitboard wKnight = 0ULL;
-    Bitboard wBishop = 0ULL;
-    Bitboard wRook = 0ULL;
-    Bitboard wQueen = 0ULL;
-    Bitboard wKing = 0ULL;
-
-    Bitboard bPawn = 0ULL;
-    Bitboard bKnight = 0ULL;
-    Bitboard bBishop = 0ULL;
-    Bitboard bRook = 0ULL;
-    Bitboard bQueen = 0ULL;
-    Bitboard bKing = 0ULL;
-
-    u8 castlingRights = 0U; // ok... nice
-
-    u8 enPassantSquare = 0U; // number 0-63; 0 is the 0th bit, meaning LSB
-
-    u8 halfMoves = 0U; // one byte can hold up to 255, which is easily in a uint8
-                       // but this means 50 plays per side
-
-    u16 fullMoves = 0U; // 16 bits is enough; games can go on for very long, but not 2 ** 32 - 1 = 4294967295 moves
-
-    bool sideToPlay = false; // white is 0, black is 1
-};
 
 class GameState
 {
@@ -83,7 +68,6 @@ public:
              a b c d e f g h
         */
 
-
         char fileChar = square[0];
         int file = fileChar - 'a'; // gives 0 - 7 value  (GPT idea)
 
@@ -97,7 +81,6 @@ public:
     std::string indexToSquare(int index)
     {
         std::string square = "";
-        // index += 1;
 
         int fileNum = index % 8;
         std::string fileString(1, 'a' + fileNum);
@@ -108,6 +91,38 @@ public:
         square.append(rowString);
 
         return square;
+    }
+
+    std::string getPieceOnSquare(BoardState state, int index)
+    {
+        Bitboard mask = 1ULL << index;
+
+        if (state.wPawn & mask)
+            return "P";
+        else if (state.wKnight & mask)
+            return "N";
+        else if (state.wBishop & mask)
+            return "B";
+        else if (state.wRook & mask)
+            return "R";
+        else if (state.wQueen & mask)
+            return "Q";
+        else if (state.wKing & mask)
+            return "K";
+        else if (state.bPawn & mask)
+            return "p";
+        else if (state.bKnight & mask)
+            return "n";
+        else if (state.bBishop & mask)
+            return "b";
+        else if (state.bRook & mask)
+            return "r";
+        else if (state.bQueen & mask)
+            return "q";
+        else if (state.bKing & mask)
+            return "k";
+        else
+            return "";
     }
 
     void setupDefaultBoard()
@@ -127,8 +142,8 @@ public:
 
         BoardState board;
 
-        u8 curr_row = 0;
-        u8 curr_file = 0;
+        u8 curr_row = 7;  // row 8
+        u8 curr_file = 0; // file a
 
         u8 fieldnumber = 0;
 
@@ -153,7 +168,7 @@ public:
                 else if (c == '/')
                 {
 
-                    curr_row += 1;
+                    curr_row -= 1;
                     curr_file = 0;
                 }
 
@@ -161,7 +176,7 @@ public:
                 {
 
                     // is this the most efficient/best practice way to do this? row 0 file 0 is lshift 63
-                    u8 shamt = 63 - (8 * curr_row + curr_file);
+                    u8 shamt = (8 * curr_row + curr_file); // the first piece, at a8, is lshamt 56
 
                     Bitboard *piecetype_to_modify = nullptr;
 
@@ -264,11 +279,13 @@ public:
             }
             else if (fieldnumber == 3)
             {
+
                 if (c == '-')
                 {
                     board.enPassantSquare = 128; // TEMPORARY: if there is no en passant square, have some number too big to be on the board
                     continue;
                 }
+
                 else if (std::isalpha(c))
                 {
                     std::string square;
@@ -314,91 +331,52 @@ public:
         std::string fen = "";
         int blankCount = 0;
 
-        for (int i = 63; i >= 0; i--)
+        for (int row = 7; row >= 0; row--) // the problem is that it starts at 63; fen goes from 56->63, 48->55, etc.
         {
+            for (int file = 0; file < 8; file++)
 
-            Bitboard val = 1ULL << i;
-            std::string toAppend;
-
-            if ((i + 1) % 8 == 0 && i < 63) // this is lowkey unreadable
             {
-                if (blankCount > 0)
+                int index = 8 * row + file;
+                Bitboard val = 1ULL << index;
+                std::string toAppend;
+
+                if (file == 0 && row < 7)
                 {
-                    fen.append(std::to_string(blankCount)); // if we have several blank
-                    blankCount = 0;
-                }
-                fen.append("/");
-            }
 
-            if (val & fullBoard)
-            {
-                if (blankCount > 0)
+                    if (blankCount > 0)
+                    {
+                        fen.append(std::to_string(blankCount)); // if we have several blank
+                        blankCount = 0;
+                    }
+
+                    fen.append("/");
+                }
+
+                if (val & fullBoard)
                 {
-                    fen.append(std::to_string(blankCount)); // if we have several blank
-                    blankCount = 0;
+                    if (blankCount > 0)
+                    {
+                        fen.append(std::to_string(blankCount)); // if we have several blank
+                        //file += blankCount - 1; // to account for automatically incrementing by 1
+                        blankCount = 0;
+                    }
+
+                    
+                    
+                        toAppend = getPieceOnSquare(state, index);
+                        fen.append(toAppend);
+
                 }
-            }
-            else
-            {
-                blankCount += 1;
-                continue;
+                else
+                {
+                    blankCount += 1;
+                    continue;
+                }
+
+                
             }
 
-            if (val & state.bBishop)
-            {
-                toAppend = "b";
-            }
-            else if (val & state.bKing)
-            {
-                toAppend = "k";
-            }
-            else if (val & state.bKnight)
-            {
-                toAppend = "n";
-            }
-            else if (val & state.bPawn)
-            {
-                toAppend = "p";
-            }
-            else if (val & state.bQueen)
-            {
-                toAppend = "q";
-            }
-            else if (val & state.bRook)
-            {
-                toAppend = "r";
-            }
-            else if (val & state.wBishop)
-            {
-                toAppend = "B";
-            }
-            else if (val & state.wKing)
-            {
-                toAppend = "K";
-            }
-            else if (val & state.wKnight)
-            {
-                toAppend = "N";
-            }
-            else if (val & state.wPawn)
-            {
-                toAppend = "P";
-            }
-            else if (val & state.wQueen)
-            {
-                toAppend = "Q";
-            }
-            else if (val & state.wRook)
-            {
-                toAppend = "R";
-            }
-            else
-            {
-                // what do do if the current square is blank
-            }
-            fen.append(toAppend);
         }
-
         if (blankCount > 0)
             fen.append(std::to_string(blankCount)); // edge case where there are empty squares on the bottom row
 
@@ -495,5 +473,79 @@ public:
         return printableBoard;
     }
 };
+
+inline Bitboard north(Bitboard bb)
+{
+    return (bb << 8);
+}
+
+inline Bitboard south(Bitboard bb)
+{
+    return (bb >> 8);
+}
+
+inline Bitboard west(Bitboard bb)
+{
+    return (bb >> 1);
+}
+
+inline Bitboard east(Bitboard bb)
+{
+    return (bb << 1);
+}
+
+inline Bitboard northw(Bitboard bb)
+{
+    return north(west(bb));
+}
+
+inline Bitboard northe(Bitboard bb)
+{
+    return north(east(bb));
+}
+
+inline Bitboard southw(Bitboard bb)
+{
+    return south(west(bb));
+}
+
+inline Bitboard southe(Bitboard bb)
+{
+    return south(east(bb));
+}
+
+inline bool get_bit(Bitboard &bb, Square sq)
+{
+    return bb & (1ULL << sq);
+}
+
+inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we need to change it
+{
+    get_bit(bb, sq) ? 0 : bb ^= (1ULL << sq);
+}
+// Modifies the bb you're using
+inline Bitboard pop_lsb(Bitboard &bb)
+{
+    bb &= bb - 1;
+    return bb; // i believe this is supposed to remove the most significant bit but put it in a new thing
+}
+
+void print_bb(Bitboard bb)
+{
+
+    for (int rank = 7; rank >= 0; rank--)
+    {
+        std::cout << "\n " << std::to_string(rank + 1);
+
+        for (int file = 0; file < 8; file++)
+        {
+            int index = 8 * rank + file;
+
+            std::cout << ' ' << std::to_string(get_bit(bb, index));
+        }
+    }
+
+    std::cout << "\n   a b c d e f g h\n";
+}
 
 #endif
