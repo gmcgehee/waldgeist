@@ -476,42 +476,42 @@ public:
 
 inline Bitboard north(Bitboard bb)
 {
-    return (bb << 8);
+    return (bb & ~RANK_8) << 8;
 }
 
 inline Bitboard south(Bitboard bb)
 {
-    return (bb >> 8);
+    return (bb & ~RANK_1) >> 8;
 }
 
 inline Bitboard west(Bitboard bb)
 {
-    return (bb >> 1);
+    return (bb & ~FILE_A) >> 1;
 }
 
 inline Bitboard east(Bitboard bb)
 {
-    return (bb << 1);
+    return (bb & ~FILE_H) << 1;
 }
 
 inline Bitboard northw(Bitboard bb)
 {
-    return north(west(bb));
+    return (bb & ~FILE_A & ~RANK_8) << 7;
 }
 
 inline Bitboard northe(Bitboard bb)
 {
-    return north(east(bb));
+    return (bb & ~FILE_H & ~RANK_8) << 9;
 }
 
 inline Bitboard southw(Bitboard bb)
 {
-    return south(west(bb));
+    return (bb & ~FILE_A & ~RANK_1) >> 9;
 }
 
 inline Bitboard southe(Bitboard bb)
 {
-    return south(east(bb));
+    return (bb & ~FILE_H & ~RANK_1) >> 7;
 }
 
 inline bool get_bit(Bitboard &bb, Square sq)
