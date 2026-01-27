@@ -523,11 +523,13 @@ inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we
 {
     get_bit(bb, sq) ? 0 : bb ^= (1ULL << sq);
 }
+
 // Modifies the bb you're using
-inline Bitboard pop_lsb(Bitboard &bb)
+inline int pop_lsb(Bitboard &bb)
 {
+    int index = __builtin_ctzll(bb);
     bb &= bb - 1;
-    return bb; // i believe this is supposed to remove the most significant bit but put it in a new thing
+    return index;
 }
 
 void print_bb(Bitboard bb)
