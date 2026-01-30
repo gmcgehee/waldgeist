@@ -24,7 +24,7 @@ int main()
 
     //std::cout << pop_lsb(game->state.wPawn) << '\n';
 
-    print_bb(northw(game->state.bPawn));
+    print_bb(north(game->state.bPawn));
     
     return 0;
     
