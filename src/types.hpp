@@ -3,9 +3,9 @@
 #define TYPES_HPP
 
 typedef uint8_t u8;
-typedef uint16_t u16;
 typedef uint64_t Bitboard;
 typedef uint8_t Square;
+typedef uint16_t Move;
 
 enum class Side : bool {
     WHITE = false, BLACK = true
@@ -48,9 +48,9 @@ struct BoardState
     u8 halfMoves = 0U; // one byte can hold up to 255, which is easily in a uint8
                        // but this means 50 plays per side
 
-    u16 fullMoves = 0U; // 16 bits is enough; games can go on for very long, but not 2 ** 32 - 1 = 4294967295 moves
+    uint16_t fullMoves = 0U; // 16 bits is enough; games can go on for very long, but not 2 ** 32 - 1 = 4294967295 moves
 
-    bool sideToPlay = false; // white is 0, black is 1
+    Side sideToPlay = Side::WHITE; // white is 0, black is 1
 };
 
 #endif
