@@ -233,11 +233,11 @@ public:
 
                 if (c == 'b')
                 {
-                    board.sideToPlay = true;
+                    board.sideToPlay = Side::BLACK;
                 }
                 else if (c == 'w')
                 {
-                    board.sideToPlay = false;
+                    board.sideToPlay = Side::WHITE;
                 }
                 else
                 {
@@ -382,7 +382,7 @@ public:
 
         // Append side to play to FEN
         fen.append(" ");
-        std::string to_play = (state.sideToPlay) ? "b" : "w"; // remember, false means white is playing
+        std::string to_play = (bool)(state.sideToPlay) ? "b" : "w"; // remember, false means white is playing
         fen.append(to_play);
         fen.append(" ");
 
@@ -524,7 +524,7 @@ inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we
     get_bit(bb, sq) ? 0 : bb ^= (1ULL << sq);
 }
 
-// Modifies the bb you're using
+// Does not modify the bitboard you're using
 inline int pop_lsb(Bitboard &bb)
 {
     int index = __builtin_ctzll(bb);
