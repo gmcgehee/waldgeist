@@ -26,113 +26,307 @@ constexpr Bitboard RANK_6 = 0x0000FF0000000000ULL;
 constexpr Bitboard RANK_7 = 0x00FF000000000000ULL;
 constexpr Bitboard RANK_8 = 0xFF00000000000000ULL;
 
+inline Bitboard north(Bitboard bb)
+{
+    return (bb & ~RANK_8) << 8;
+}
 
-class GameState
+inline Bitboard south(Bitboard bb)
+{
+    return (bb & ~RANK_1) >> 8;
+}
+
+inline Bitboard west(Bitboard bb)
+{
+    return (bb & ~FILE_A) >> 1;
+}
+
+inline Bitboard east(Bitboard bb)
+{
+    return (bb & ~FILE_H) << 1;
+}
+
+inline Bitboard northw(Bitboard bb)
+{
+    return (bb & ~FILE_A & ~RANK_8) << 7;
+}
+
+inline Bitboard northe(Bitboard bb)
+{
+    return (bb & ~FILE_H & ~RANK_8) << 9;
+}
+
+inline Bitboard southw(Bitboard bb)
+{
+    return (bb & ~FILE_A & ~RANK_1) >> 9;
+}
+
+inline Bitboard southe(Bitboard bb)
+{
+    return (bb & ~FILE_H & ~RANK_1) >> 7;
+}
+
+inline bool get_bit(Bitboard &bb, Square sq)
+{
+    return bb & (1ULL << sq);
+}
+
+inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we need to change it
+{
+    get_bit(bb, sq) ? 0 : bb ^= (1ULL << sq);
+}
+
+// Does not modify the bitboard you're using
+inline int pop_lsb(Bitboard &bb)
+{
+    int index = __builtin_ctzll(bb);
+    bb &= bb - 1;
+    return index;
+}
+
+void print_bb(Bitboard bb)
 {
 
-public:
-    BoardState state;
-
-    GameState(std::string fen = "")
+    for (int rank = 7; rank >= 0; rank--)
     {
-        if (fen != "")
-        {
-            state = loadFromFen(fen);
-        }
+        std::cout << "\n " << std::to_string(rank + 1);
 
-        else
+        for (int file = 0; file < 8; file++)
         {
-            // do I need to do anything here?
+            int index = 8 * rank + file;
+
+            std::cout << ' ' << std::to_string(get_bit(bb, index));
         }
     }
 
-    /**
-     * @brief Returns the index of a given square. a1 = 0, h1 = 7, a8 = 56, h8 = 63
-     * @param square
-     * @returns
-     */
+    std::cout << "\n   a b c d e f g h\n";
+}
 
-    int squareToIndex(std::string square)
+/**
+ * @brief Returns the index of a given square. a1 = 0, h1 = 7, a8 = 56, h8 = 63
+ * @param square
+ * @returns
+ */
+
+int squareToIndex(std::string square)
+{
+    /*
+              index 63 ▼
+       8 0 0 0 0 0 0 0 0
+       7 0 0 0 0 0 0 0 0
+       6 0 0 0 0 0 0 0 0
+       5 0 0 0 0 0 0 0 0
+       4 0 0 0 0 0 0 0 0
+       3 0 0 0 0 0 0 0 0
+       2 0 0 0 0 0 0 0 0
+       1 0 0 0 0 0 0 0 0
+         ^ index 0
+         a b c d e f g h
+    */
+
+    char fileChar = square[0];
+    int file = fileChar - 'a'; // gives 0 - 7 value  (GPT idea)
+
+    int row = square[1] - '0'; // somehow this converts the types. Genuinely no idea how. Subtract a char from a char you get an int. Nice.
+
+    int bit_number = 8 * (row - 1) + file;
+
+    return bit_number;
+}
+
+std::string indexToSquare(int index)
+{
+    std::string square = "";
+
+    int fileNum = index % 8;
+    std::string fileString(1, 'a' + fileNum);
+    square.append(fileString);
+
+    int row = (index - fileNum) / 8 + 1;
+    std::string rowString = std::to_string(row);
+    square.append(rowString);
+
+    return square;
+}
+
+std::string getPieceOnSquare(BoardState state, int index)
+{
+    Bitboard mask = 1ULL << index;
+
+    if (state.wPawn & mask)
+        return "P";
+    else if (state.wKnight & mask)
+        return "N";
+    else if (state.wBishop & mask)
+        return "B";
+    else if (state.wRook & mask)
+        return "R";
+    else if (state.wQueen & mask)
+        return "Q";
+    else if (state.wKing & mask)
+        return "K";
+    else if (state.bPawn & mask)
+        return "p";
+    else if (state.bKnight & mask)
+        return "n";
+    else if (state.bBishop & mask)
+        return "b";
+    else if (state.bRook & mask)
+        return "r";
+    else if (state.bQueen & mask)
+        return "q";
+    else if (state.bKing & mask)
+        return "k";
+    else
+        return "";
+}
+
+std::string exportFen(BoardState state)
+{
+    Bitboard blackBoard = state.bBishop | state.bKnight | state.bPawn | state.bQueen | state.bRook | state.bKing;
+    Bitboard whiteBoard = state.wBishop | state.wKnight | state.wPawn | state.wQueen | state.wRook | state.wKing;
+    Bitboard fullBoard = blackBoard | whiteBoard;
+
+    std::string fen = "";
+    int blankCount = 0;
+
+    for (int row = 7; row >= 0; row--) // the problem is that it starts at 63; fen goes from 56->63, 48->55, etc.
     {
-        /*
-                  index 63 ▼
-           8 0 0 0 0 0 0 0 0
-           7 0 0 0 0 0 0 0 0
-           6 0 0 0 0 0 0 0 0
-           5 0 0 0 0 0 0 0 0
-           4 0 0 0 0 0 0 0 0
-           3 0 0 0 0 0 0 0 0
-           2 0 0 0 0 0 0 0 0
-           1 0 0 0 0 0 0 0 0
-             ^ index 0
-             a b c d e f g h
-        */
+        for (int file = 0; file < 8; file++)
 
-        char fileChar = square[0];
-        int file = fileChar - 'a'; // gives 0 - 7 value  (GPT idea)
+        {
+            int index = 8 * row + file;
+            Bitboard val = 1ULL << index;
+            std::string toAppend;
 
-        int row = square[1] - '0'; // somehow this converts the types. Genuinely no idea how. Subtract a char from a char you get an int. Nice.
+            if (file == 0 && row < 7)
+            {
 
-        int bit_number = 8 * (row - 1) + file;
+                if (blankCount > 0)
+                {
+                    fen.append(std::to_string(blankCount)); // if we have several blank
+                    blankCount = 0;
+                }
 
-        return bit_number;
+                fen.append("/");
+            }
+
+            if (val & fullBoard)
+            {
+                if (blankCount > 0)
+                {
+                    fen.append(std::to_string(blankCount)); // if we have several blank
+                    // file += blankCount - 1; // to account for automatically incrementing by 1
+                    blankCount = 0;
+                }
+
+                toAppend = getPieceOnSquare(state, index);
+                fen.append(toAppend);
+            }
+            else
+            {
+                blankCount += 1;
+                continue;
+            }
+        }
+    }
+    if (blankCount > 0)
+        fen.append(std::to_string(blankCount)); // edge case where there are empty squares on the bottom row
+
+    // Append side to play to FEN
+    fen.append(" ");
+    std::string to_play = (bool)(state.sideToPlay) ? "b" : "w"; // remember, false means white is playing
+    fen.append(to_play);
+    fen.append(" ");
+
+    // Append castling rights to FEN
+    if (state.castlingRights > 63)
+        fen.append("-");
+
+    else
+    {
+        if (state.castlingRights & 8)
+            fen.append("K");
+
+        if (state.castlingRights & 4)
+            fen.append("Q");
+
+        if (state.castlingRights & 2)
+            fen.append("k");
+
+        if (state.castlingRights & 1)
+            fen.append("q");
     }
 
-    std::string indexToSquare(int index)
+    fen.append(" ");
+
+    // En passant square
+    std::string enPassantSquare;
+
+    if (state.enPassantSquare <= 63)
+        enPassantSquare = indexToSquare(state.enPassantSquare);
+    else
+        enPassantSquare = "-";
+
+    fen.append(enPassantSquare);
+
+    fen.append(" ");
+
+    std::string halfmoveCounter = std::to_string(state.halfMoves);
+    fen.append(halfmoveCounter);
+
+    fen.append(" ");
+
+    std::string fullmoveCounter = std::to_string(state.fullMoves);
+    fen.append(fullmoveCounter);
+
+    return fen;
+}
+
+std::string getPrintableBoardState(BoardState state)
+{
+    std::string fen = exportFen(state);
+    std::string printableBoard;
+
+    for (int i = 0; i <= fen.length(); i++)
     {
-        std::string square = "";
+        char c = fen[i];
 
-        int fileNum = index % 8;
-        std::string fileString(1, 'a' + fileNum);
-        square.append(fileString);
-
-        int row = (index - fileNum) / 8 + 1;
-        std::string rowString = std::to_string(row);
-        square.append(rowString);
-
-        return square;
-    }
-
-    std::string getPieceOnSquare(BoardState state, int index)
-    {
-        Bitboard mask = 1ULL << index;
-
-        if (state.wPawn & mask)
-            return "P";
-        else if (state.wKnight & mask)
-            return "N";
-        else if (state.wBishop & mask)
-            return "B";
-        else if (state.wRook & mask)
-            return "R";
-        else if (state.wQueen & mask)
-            return "Q";
-        else if (state.wKing & mask)
-            return "K";
-        else if (state.bPawn & mask)
-            return "p";
-        else if (state.bKnight & mask)
-            return "n";
-        else if (state.bBishop & mask)
-            return "b";
-        else if (state.bRook & mask)
-            return "r";
-        else if (state.bQueen & mask)
-            return "q";
-        else if (state.bKing & mask)
-            return "k";
+        if (c == ' ')
+        {
+            return printableBoard;
+        }
+        else if (c == '/')
+        {
+            printableBoard.append("\n");
+        }
+        else if (std::isdigit(c))
+        {
+            for (int j = 0; j < c - '0'; j++)
+            {
+                printableBoard.append(" .");
+            }
+        }
+        else if (std::isalpha(c))
+        {
+            std::string to_append(1, c);
+            to_append = " " + to_append;
+            printableBoard.append(to_append);
+        }
         else
-            return "";
+        {
+            // if it isn't a /, ' ', digit, or otherwise--what could it be?
+
+            // throw error
+            throw std::invalid_argument("Internal FEN conversion output invalid character.");
+            return printableBoard;
+        }
     }
 
-    void setupDefaultBoard()
-    {
-        // default FEN : rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-        // Convenience method
-        state = loadFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    }
+    return printableBoard;
+}
 
-    BoardState loadFromFen(std::string const &fen)
+BoardState loadFromFen(std::string const &fen)
     {
 
         // White pieces are uppercase, black are lowercase
@@ -321,233 +515,5 @@ public:
 
         return board;
     }
-
-    std::string exportFen(BoardState state)
-    {
-        Bitboard blackBoard = state.bBishop | state.bKnight | state.bPawn | state.bQueen | state.bRook | state.bKing;
-        Bitboard whiteBoard = state.wBishop | state.wKnight | state.wPawn | state.wQueen | state.wRook | state.wKing;
-        Bitboard fullBoard = blackBoard | whiteBoard;
-
-        std::string fen = "";
-        int blankCount = 0;
-
-        for (int row = 7; row >= 0; row--) // the problem is that it starts at 63; fen goes from 56->63, 48->55, etc.
-        {
-            for (int file = 0; file < 8; file++)
-
-            {
-                int index = 8 * row + file;
-                Bitboard val = 1ULL << index;
-                std::string toAppend;
-
-                if (file == 0 && row < 7)
-                {
-
-                    if (blankCount > 0)
-                    {
-                        fen.append(std::to_string(blankCount)); // if we have several blank
-                        blankCount = 0;
-                    }
-
-                    fen.append("/");
-                }
-
-                if (val & fullBoard)
-                {
-                    if (blankCount > 0)
-                    {
-                        fen.append(std::to_string(blankCount)); // if we have several blank
-                        //file += blankCount - 1; // to account for automatically incrementing by 1
-                        blankCount = 0;
-                    }
-
-                    
-                    
-                        toAppend = getPieceOnSquare(state, index);
-                        fen.append(toAppend);
-
-                }
-                else
-                {
-                    blankCount += 1;
-                    continue;
-                }
-
-                
-            }
-
-        }
-        if (blankCount > 0)
-            fen.append(std::to_string(blankCount)); // edge case where there are empty squares on the bottom row
-
-        // Append side to play to FEN
-        fen.append(" ");
-        std::string to_play = (bool)(state.sideToPlay) ? "b" : "w"; // remember, false means white is playing
-        fen.append(to_play);
-        fen.append(" ");
-
-        // Append castling rights to FEN
-        if (state.castlingRights > 63)
-            fen.append("-");
-
-        else
-        {
-            if (state.castlingRights & 8)
-                fen.append("K");
-
-            if (state.castlingRights & 4)
-                fen.append("Q");
-
-            if (state.castlingRights & 2)
-                fen.append("k");
-
-            if (state.castlingRights & 1)
-                fen.append("q");
-        }
-
-        fen.append(" ");
-
-        // En passant square
-        std::string enPassantSquare;
-
-        if (state.enPassantSquare <= 63)
-            enPassantSquare = indexToSquare(state.enPassantSquare);
-        else
-            enPassantSquare = "-";
-
-        fen.append(enPassantSquare);
-
-        fen.append(" ");
-
-        std::string halfmoveCounter = std::to_string(state.halfMoves);
-        fen.append(halfmoveCounter);
-
-        fen.append(" ");
-
-        std::string fullmoveCounter = std::to_string(state.fullMoves);
-        fen.append(fullmoveCounter);
-
-        return fen;
-    }
-
-    std::string getPrintableBoardState(BoardState state)
-    {
-        std::string fen = exportFen(state);
-        std::string printableBoard;
-
-        for (int i = 0; i <= fen.length(); i++)
-        {
-            char c = fen[i];
-
-            if (c == ' ')
-            {
-                return printableBoard;
-            }
-            else if (c == '/')
-            {
-                printableBoard.append("\n");
-            }
-            else if (std::isdigit(c))
-            {
-                for (int j = 0; j < c - '0'; j++)
-                {
-                    printableBoard.append(" .");
-                }
-            }
-            else if (std::isalpha(c))
-            {
-                std::string to_append(1, c);
-                to_append = " " + to_append;
-                printableBoard.append(to_append);
-            }
-            else
-            {
-                // if it isn't a /, ' ', digit, or otherwise--what could it be?
-
-                // throw error
-                throw std::invalid_argument("Internal FEN conversion output invalid character.");
-                return printableBoard;
-            }
-        }
-
-        return printableBoard;
-    }
-};
-
-inline Bitboard north(Bitboard bb)
-{
-    return (bb & ~RANK_8) << 8;
-}
-
-inline Bitboard south(Bitboard bb)
-{
-    return (bb & ~RANK_1) >> 8;
-}
-
-inline Bitboard west(Bitboard bb)
-{
-    return (bb & ~FILE_A) >> 1;
-}
-
-inline Bitboard east(Bitboard bb)
-{
-    return (bb & ~FILE_H) << 1;
-}
-
-inline Bitboard northw(Bitboard bb)
-{
-    return (bb & ~FILE_A & ~RANK_8) << 7;
-}
-
-inline Bitboard northe(Bitboard bb)
-{
-    return (bb & ~FILE_H & ~RANK_8) << 9;
-}
-
-inline Bitboard southw(Bitboard bb)
-{
-    return (bb & ~FILE_A & ~RANK_1) >> 9;
-}
-
-inline Bitboard southe(Bitboard bb)
-{
-    return (bb & ~FILE_H & ~RANK_1) >> 7;
-}
-
-inline bool get_bit(Bitboard &bb, Square sq)
-{
-    return bb & (1ULL << sq);
-}
-
-inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we need to change it
-{
-    get_bit(bb, sq) ? 0 : bb ^= (1ULL << sq);
-}
-
-// Does not modify the bitboard you're using
-inline int pop_lsb(Bitboard &bb)
-{
-    int index = __builtin_ctzll(bb);
-    bb &= bb - 1;
-    return index;
-}
-
-void print_bb(Bitboard bb)
-{
-
-    for (int rank = 7; rank >= 0; rank--)
-    {
-        std::cout << "\n " << std::to_string(rank + 1);
-
-        for (int file = 0; file < 8; file++)
-        {
-            int index = 8 * rank + file;
-
-            std::cout << ' ' << std::to_string(get_bit(bb, index));
-        }
-    }
-
-    std::cout << "\n   a b c d e f g h\n";
-}
 
 #endif
