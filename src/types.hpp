@@ -7,8 +7,12 @@ typedef uint64_t Bitboard;
 typedef uint8_t Square;
 typedef uint16_t Move;
 
-enum class Side : bool {
-    WHITE = false, BLACK = true
+enum class Side : int {
+    WHITE = 0, BLACK = 1
+};
+
+enum class Piece : int {
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
 };
 
 enum class BoardSquares : Square {
