@@ -7,15 +7,23 @@ typedef uint64_t Bitboard;
 typedef uint8_t Square;
 typedef uint16_t Move;
 
-enum class Side : int {
+enum Side : int {
     WHITE = 0, BLACK = 1
 };
 
-enum class Piece : int {
-    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+enum SpecialMoveFlag : int {
+    NONSPECIAL = 0, PROMOTION = 1, EN_PASSANT = 2, CASTLING = 3
 };
 
-enum class BoardSquares : Square {
+enum Piece : int {
+    EMPTY = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6
+};
+
+enum PromotionPiece : int {
+    TO_NONE, TO_KNIGHT, TO_BISHOP, TO_ROOK, TO_QUEEN
+};
+
+enum BoardSquares : Square {
     a1, b1, c1, d1, e1, f1, g1, h1,
     a2, b2, c2, d2, e2, f2, g2, h2,
     a3, b3, c3, d3, e3, f3, g3, h3,

@@ -1,12 +1,13 @@
+
+#ifndef BITBOARD_H
+#define BITBOARD_H
+
 #include <iostream>
 #include <cstdint>
 #include <map>
 #include <string>
 #include <cctype>
 #include "types.hpp"
-
-#ifndef BITBOARD_H
-#define BITBOARD_H
 
 constexpr Bitboard FILE_A = 0x0101010101010101ULL;
 constexpr Bitboard FILE_B = 0x0202020202020202ULL;
@@ -76,7 +77,6 @@ inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we
     get_bit(bb, sq) ? 0 : bb ^= (1ULL << sq);
 }
 
-// Does not modify the bitboard you're using
 inline int pop_lsb(Bitboard &bb)
 {
     int index = __builtin_ctzll(bb);

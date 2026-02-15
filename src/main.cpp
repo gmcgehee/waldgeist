@@ -1,31 +1,28 @@
 #include <iostream>
 #include <cassert>
+
+
 #include "bitboard.hpp"
 #include "utilities.hpp"
 #include "types.hpp"
+#include "gamestate.hpp"
+#include "tables.hpp"
+#include "movegen.hpp"
 
 int main()
 {
 
-    GameState *game = new GameState();
+    //GameState *game = new GameState();
 
-    //std::string fen_in = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0";
-    std::string fen_in = "r1bqkbnr/pppp2pp/2n2p2/4p3/2B1P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 1 4";
+    print_bb(KNIGHT_MOVES[b3]);
 
-    game->state = game->loadFromFen(fen_in);
-    std::string fen_out = game->exportFen(game->state);
 
-    assert (fen_in == fen_out);
+    Move move = MoveGeneration::convertToMove((Square)c8, (Square)c7, TO_NONE, NONSPECIAL);
 
-    std::string board_to_print = game->getPrintableBoardState(game->state);
-    std::cout << board_to_print << std::endl;
+    std::cout << move << std::endl;
+    // Should be: 0100110010111010
+    // Actually : 0100110010111010
 
-    print_bb(game->state.wPawn);
-
-    //std::cout << pop_lsb(game->state.wPawn) << '\n';
-
-    print_bb(north(game->state.bPawn));
-    
     return 0;
     
 }

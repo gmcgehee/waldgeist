@@ -13,7 +13,7 @@
 // Side  : WHITE or BLACK (0, 1)
 // Square: a1-h8 (0 - 63); necessarily 63 squares to allow consistent indexing
 
-Bitboard const PAWN_ATTACKS[2][64] = {
+inline constexpr Bitboard PAWN_ATTACKS[2][64] = {
     {0x0000000000000200ULL,
      0x0000000000000500ULL,
      0x0000000000000a00ULL,
@@ -145,7 +145,7 @@ Bitboard const PAWN_ATTACKS[2][64] = {
      0x0040000000000000ULL}};
 
 // Does not depend on side
-Bitboard KNIGHT_MOVES[64] = {
+inline constexpr Bitboard KNIGHT_MOVES[64] = {
     0x0000000000020400ULL,
     0x0000000000050800ULL,
     0x00000000000a1100ULL,
