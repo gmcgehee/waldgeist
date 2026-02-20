@@ -7,7 +7,7 @@
 
 namespace MoveGeneration
 {
-
+    // From official Stockfish code:
     /// A move needs 16 bits to be stored
     ///
     /// bit  0- 5: destination square (from 0 to 63)
