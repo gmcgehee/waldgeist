@@ -1,6 +1,4 @@
-
-#ifndef BITBOARD_H
-#define BITBOARD_H
+#pragma once
 
 #include <iostream>
 #include <cstdint>
@@ -515,5 +513,3 @@ BoardState loadFromFen(std::string const &fen)
 
         return board;
     }
-
-#endif
