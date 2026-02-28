@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <bit>
+
 #include "bitboard.hpp"
 #include "types.hpp"
 #include "tables.hpp"
@@ -92,11 +94,11 @@ namespace MoveGeneration
         return move_list;
     }
 
-    std::vector<Move> generatePawnMoves(Bitboard empty, Bitboard p_state, Side us)
+    std::vector<Move> generatePawnPushes(Bitboard &empty, Bitboard p_state, Side us)
     {
         // how is it labelled that there will be an en passant square?
         std::vector<Move> move_list = {};
-        move_list.reserve(32);
+        move_list.reserve(16);
 
         Bitboard one_push;
         Bitboard two_push;
@@ -150,7 +152,20 @@ namespace MoveGeneration
     };
 
     std::vector<Move> generateBishopMoves(Bitboard &empty, Bitboard &b_state, Side us);
-    std::vector<Move> generateKnightMoves(Bitboard &empty, Bitboard &n_state, Side us);
+    std::vector<Move> generateKnightMoves(Bitboard &empty, Bitboard n_state, Side us)
+    {
+
+        std::vector<Move> move_list;
+        move_list.reserve(8 * std::popcount(n_state)); // NOTE: is this right to do? some considerations:
+
+        // - The number 16 (originally) is because two knights in the middle of the board (safe assumption) have 8 moves
+        // - Might I want to take the populattion count?
+
+        while (n_state)
+        {
+            Square sq = pop_lsb(n_state);
+        }
+    }
     std::vector<Move> generateRookMoves(Bitboard &empty, Bitboard &r_state, Side us);
     std::vector<Move> generateQueenMoves(Bitboard &empty, Bitboard &q_state, Side us);
     std::vector<Move> generateKingMoves(Bitboard &empty, Bitboard &k_state, Side us, u8 castling_rights);
