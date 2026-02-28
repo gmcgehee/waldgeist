@@ -33,35 +33,6 @@ namespace MoveGeneration
         std::vector<Move> move_list = {};
         move_list.reserve(14); // maximum of 14 possible pawn captures in any state
 
-        Bitboard captures;
-        Square origin;
-        Square destination;
-
-        if (en_passant_square > 0) // the en passant square will never be a0
-        {
-            set_bit(their_state, en_passant_square); // en passant is accounted for in make--no need to make a special move flag
-        }
-
-        while (p_state) // generate captures; it's harder to keep track of the original position otherwise
-        {
-            origin = pop_lsb(p_state);
-            captures = PAWN_ATTACKS[us][origin] & their_state;
-
-            while (captures)
-            {
-                destination = pop_lsb(captures);
-                move_list.push_back(convertToMove(destination, origin));
-            }
-        }
-
-        return move_list;
-    }
-
-    std::vector<Move> generatePawnCapturesLive(Bitboard their_state, Bitboard p_state, Side us, Square en_passant_square = 0)
-    {
-        std::vector<Move> move_list = {};
-        move_list.reserve(14); // maximum of 14 possible pawn captures in any state
-
         Bitboard west_captures;
         Bitboard east_captures;
         Square origin;
