@@ -4,7 +4,6 @@
 #include "bitboard.hpp"
 #include <string>
 
-
 class GameState
 {
 
@@ -17,19 +16,23 @@ public:
         {
             state = loadFromFen(fen);
         }
-
-        else
-        {
-            // do I need to do anything here?
-        }
     }
 
     void setupDefaultBoard()
     {
-        // default FEN : rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
         // Convenience method
+        // default FEN : rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
         state = loadFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     }
 
-    
+    Bitboard getSideState(Side side)
+    {
+        if (side == BLACK)
+        {
+            return state.bPawn | state.bKnight | state.bBishop | state.bRook | state.bQueen | state.bKing;
+        }
+        else { // (side == WHITE) 
+            return state.wPawn | state.wKnight | state.wBishop | state.wRook | state.wQueen | state.wKing;
+        }
+    }
 };
