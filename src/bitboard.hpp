@@ -75,9 +75,9 @@ inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we
     get_bit(bb, sq) ? 0 : bb ^= (1ULL << sq);
 }
 
-inline int pop_lsb(Bitboard &bb)
+inline Square pop_lsb(Bitboard &bb)
 {
-    int index = __builtin_ctzll(bb);
+    Square index = __builtin_ctzll(bb);
     bb &= bb - 1;
     return index;
 }
@@ -147,9 +147,10 @@ std::string indexToSquare(int index)
     return square;
 }
 
-std::string getPieceOnSquare(BoardState state, int index)
+std::string getPieceOnSquare(BoardState state, Square sq)
 {
-    Bitboard mask = 1ULL << index;
+    // wouldn't it be better to return the PIECE type? like Piece::PAWN? How would we account for color?
+    Bitboard mask = 1ULL << sq;
 
     if (state.wPawn & mask)
         return "P";
