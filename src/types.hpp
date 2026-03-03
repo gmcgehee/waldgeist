@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 typedef uint8_t u8;
 typedef uint64_t Bitboard;
 typedef uint8_t Square;
@@ -53,7 +55,10 @@ struct BoardState
 
     u8 castlingRights = 0U; // ok... nice
 
-    u8 enPassantSquare = 0U; // number 0-63; 0 is the 0th bit, meaning LSB
+    // 0000 0000
+    //      KQkq
+
+    Square enPassantSquare = 0U; // number 0-63; 0 is the 0th bit, meaning LSB
 
     u8 halfMoves = 0U; // one byte can hold up to 255, which is easily in a uint8
                        // but this means 50 plays per side
