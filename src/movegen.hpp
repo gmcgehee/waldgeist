@@ -20,17 +20,17 @@ namespace MoveGeneration
     inline Move convertToMove(Square destination, Square origin, PromotionPiece promotion_piece = TO_NONE, SpecialMoveFlag flag = NONSPECIAL)
     {
 
-        Move move = 0;
+        Move move = 0U;
 
         move |= destination;
-        move |= origin << 6;
-        move |= promotion_piece << 12;
-        move |= flag << 14;
+        move |= origin << 6U;
+        move |= promotion_piece << 12U;
+        move |= flag << 14U;
 
         return move;
     }
 
-    std::vector<Move> generatePawnCaptures(Bitboard their_state, Bitboard p_state, Side us, Square en_passant_square = 0)
+    std::vector<Move> generatePawnCaptures(Bitboard their_state, Bitboard our_p_state, Side us, Square en_passant_square = 0)
     {
         std::vector<Move> move_list = {};
         move_list.reserve(14); // maximum of 14 possible pawn captures in any state
@@ -47,7 +47,7 @@ namespace MoveGeneration
 
         if (us == WHITE)
         {
-            east_captures = northe(p_state) & their_state;
+            east_captures = northe(our_p_state) & their_state;
 
             while (east_captures)
             {
@@ -57,7 +57,7 @@ namespace MoveGeneration
                 move_list.push_back(move);
             }
 
-            west_captures = northw(p_state) & their_state;
+            west_captures = northw(our_p_state) & their_state;
 
             while (west_captures)
             {
@@ -70,7 +70,7 @@ namespace MoveGeneration
         else
         {
 
-            east_captures = southe(p_state) & their_state;
+            east_captures = southe(our_p_state) & their_state;
 
             while (east_captures)
             {
@@ -80,7 +80,7 @@ namespace MoveGeneration
                 move_list.push_back(move);
             }
 
-            west_captures = southw(p_state) & their_state;
+            west_captures = southw(our_p_state) & their_state;
 
             while (west_captures)
             {
@@ -94,7 +94,7 @@ namespace MoveGeneration
         return move_list;
     }
 
-    std::vector<Move> generatePawnPushes(Bitboard &empty, Bitboard p_state, Side us)
+    std::vector<Move> generatePawnPushes(Bitboard empty, Bitboard our_p_state, Side us)
     {
         // how is it labelled that there will be an en passant square?
         std::vector<Move> move_list = {};
@@ -105,7 +105,7 @@ namespace MoveGeneration
 
         if (us == Side::WHITE)
         {
-            one_push = north(p_state) & empty;
+            one_push = north(our_p_state) & empty;
             two_push = north(one_push & RANK_3) & empty; // & with RANK_3 to verify that the pieces that have moved by 1 are actually able to double push
 
             Square square;
@@ -114,20 +114,20 @@ namespace MoveGeneration
             while (one_push)
             {
                 square = pop_lsb(one_push);
-                move = convertToMove((Square)(square), (Square)(square - 8));
+                move = convertToMove(square, square - 8);
                 move_list.push_back(move);
             }
 
             while (two_push)
             {
                 square = pop_lsb(two_push);
-                move = convertToMove((Square)(square), (Square)(square - 16), TO_NONE, EN_PASSANT);
+                move = convertToMove(square, square - 16, TO_NONE, EN_PASSANT);
                 move_list.push_back(move);
             }
         }
         else
         {
-            one_push = south(p_state) & empty;
+            one_push = south(our_p_state) & empty;
             two_push = south(one_push & RANK_6) & empty;
 
             Square square;
@@ -136,14 +136,14 @@ namespace MoveGeneration
             while (one_push)
             {
                 square = pop_lsb(one_push);
-                move = convertToMove((Square)(square), (Square)(square + 8));
+                move = convertToMove(square, square + 8);
                 move_list.push_back(move);
             }
 
             while (two_push)
             {
                 square = pop_lsb(two_push);
-                move = convertToMove((Square)(square), (Square)(square + 16), TO_NONE, EN_PASSANT);
+                move = convertToMove(square, square + 16, TO_NONE, EN_PASSANT);
                 move_list.push_back(move);
             }
         }
@@ -151,23 +151,132 @@ namespace MoveGeneration
         return move_list;
     };
 
-    std::vector<Move> generateBishopMoves(Bitboard &empty, Bitboard &b_state, Side us);
-    std::vector<Move> generateKnightMoves(Bitboard &empty, Bitboard n_state, Side us)
-    {
+    std::vector<Move> generateBishopMoves(Bitboard empty, Bitboard b_state, Side us);
 
+    // generateKnightCaptures: tentatively done
+    std::vector<Move> generateKnightCaptures(Bitboard their_state, Bitboard our_n_state)
+    {
         std::vector<Move> move_list;
-        move_list.reserve(8 * std::popcount(n_state)); // NOTE: is this right to do? some considerations:
+        move_list.reserve(8 * std::popcount(our_n_state)); // NOTE: is this right to do? some considerations:
 
         // - The number 16 (originally) is because two knights in the middle of the board (safe assumption) have 8 moves
         // - Might I want to take the populattion count?
 
-        while (n_state)
+        while (our_n_state)
         {
-            Square sq = pop_lsb(n_state);
+            Square origin = pop_lsb(our_n_state);
+            Bitboard knight_captures_squares = KNIGHT_MOVES[origin] & their_state;
+
+            while (knight_captures_squares)
+            {
+                Square destination = pop_lsb(knight_captures_squares);
+                Move move = convertToMove(destination, origin);
+                move_list.push_back(move);
+            }
         }
+        return move_list;
     }
-    std::vector<Move> generateRookMoves(Bitboard &empty, Bitboard &r_state, Side us);
-    std::vector<Move> generateQueenMoves(Bitboard &empty, Bitboard &q_state, Side us);
-    std::vector<Move> generateKingMoves(Bitboard &empty, Bitboard &k_state, Side us, u8 castling_rights);
+
+    // generateKnightQuiets: tentatively done
+    std::vector<Move> generateKnightQuiets(Bitboard empty, Bitboard our_n_state)
+    {
+
+        std::vector<Move> move_list;
+        move_list.reserve(8 * std::popcount(our_n_state)); // NOTE: is this right to do? some considerations:
+
+        // - The number 16 (originally) is because two knights in the middle of the board (safe assumption) have 8 moves
+        // - Might I want to take the populattion count?
+
+        while (our_n_state)
+        {
+            Square origin = pop_lsb(our_n_state);
+            Bitboard knight_squares = KNIGHT_MOVES[origin] & empty;
+
+            while (knight_squares)
+            {
+                Square destination = pop_lsb(knight_squares);
+                Move move = convertToMove(destination, origin);
+                move_list.push_back(move);
+            }
+        }
+        return move_list;
+    }
+
+    std::vector<Move> generateRookMoves(Bitboard empty, Bitboard r_state);
+    std::vector<Move> generateQueenMoves(Bitboard empty, Bitboard q_state);
+
+    // generateKingCaptures: untested
+    std::vector<Move> generateKingCaptures(Bitboard their_state, Bitboard our_k_state)
+    {
+        std::vector<Move> move_list;
+
+        move_list.reserve(8);
+
+        Square origin = __builtin_ctzll(our_k_state); // no need to pop lsb and modify k state
+        Bitboard king_squares = KING_MOVES[origin] & their_state;
+
+        while (king_squares)
+        {
+            Square destination = pop_lsb(king_squares);
+            Move move = convertToMove(destination, origin);
+            move_list.push_back(move);
+        }
+
+        return move_list;
+    }
+
+    // generateKingQuiets: castling unfinished
+    std::vector<Move> generateKingQuiets(Bitboard empty, Bitboard our_k_state, u8 castling_rights, Side us)
+    {
+        std::vector<Move> move_list;
+
+        move_list.reserve(8); // even with castling taken into account, there will only ever be 8 max
+
+        Square origin = __builtin_ctzll(our_k_state); // no need to pop lsb and modify k state
+        Bitboard king_squares = KING_MOVES[origin] & empty;
+
+        while (king_squares)
+        {
+            Square destination = pop_lsb(king_squares);
+            Move move = convertToMove(destination, origin);
+            move_list.push_back(move);
+        }
+
+        // Castling rights
+        // if we are white, we need to check if the two squares to our right are clear,
+        // and if the three squares to our left are clear
+
+
+        // Or, avoid branching and do it this way:
+        Bitboard east_mask = 0b1100000ULL << (56 * us); // the 56 * us will shift it to the 8th rank if (us == BLACK)
+        Bitboard west_mask = 0b1110ULL << (56 * us);
+
+        print_bb(east_mask);
+        print_bb(west_mask);
+
+        Bitboard occupied = ~empty;
+
+        
+
+        if (us == WHITE) // can I avoid branching ?
+        {
+            // if (!(east_white_mask & occupied))
+            {
+                move_list.push_back(0b1100000100000110); // hard-coded binary castling
+            }
+
+            // if (!(west_white_mask & occupied))
+            {
+                move_list.push_back(0b1100000100000010); // hard-coded binary castling
+            }
+        }
+
+        else // us == BLACK
+        {
+
+        }
+
+        return move_list;
+    }
 
 }
