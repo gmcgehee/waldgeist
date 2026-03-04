@@ -151,9 +151,6 @@ namespace MoveGeneration
         return move_list;
     };
 
-    std::vector<Move> generateBishopMoves(Bitboard empty, Bitboard b_state, Side us);
-
-    // generateKnightCaptures: tentatively done
     std::vector<Move> generateKnightCaptures(Bitboard their_state, Bitboard our_n_state)
     {
         std::vector<Move> move_list;
@@ -177,7 +174,6 @@ namespace MoveGeneration
         return move_list;
     }
 
-    // generateKnightQuiets: tentatively done
     std::vector<Move> generateKnightQuiets(Bitboard empty, Bitboard our_n_state)
     {
 
@@ -202,10 +198,24 @@ namespace MoveGeneration
         return move_list;
     }
 
-    std::vector<Move> generateRookMoves(Bitboard empty, Bitboard r_state);
-    std::vector<Move> generateQueenMoves(Bitboard empty, Bitboard q_state);
+    // todo
+    std::vector<Move> generateBishopCaptures(Bitboard their_state, Bitboard our_b_state);
 
-    // generateKingCaptures: untested
+    // todo
+    std::vector<Move> generateBishopQuiets(Bitboard empty, Bitboard our_b_state);
+
+    // todo
+    std::vector<Move> generateRookCaptures(Bitboard empty, Bitboard our_r_state);
+
+    // todo
+    std::vector<Move> generateRookQuiets(Bitboard empty, Bitboard our_r_state);
+
+    // todo
+    std::vector<Move> generateQueenCaptures(Bitboard their_state, Bitboard our_q_state);
+
+    // todo
+    std::vector<Move> generateQueenQuiets(Bitboard empty, Bitboard our_q_state);
+
     std::vector<Move> generateKingCaptures(Bitboard their_state, Bitboard our_k_state)
     {
         std::vector<Move> move_list;
@@ -225,7 +235,6 @@ namespace MoveGeneration
         return move_list;
     }
 
-    // generateKingQuiets: castling unfinished
     std::vector<Move> generateKingQuiets(Bitboard empty, Bitboard our_k_state, u8 castling_rights, Side us)
     {
         std::vector<Move> move_list;
@@ -246,34 +255,41 @@ namespace MoveGeneration
         // if we are white, we need to check if the two squares to our right are clear,
         // and if the three squares to our left are clear
 
-
         // Or, avoid branching and do it this way:
         Bitboard east_mask = 0b1100000ULL << (56 * us); // the 56 * us will shift it to the 8th rank if (us == BLACK)
         Bitboard west_mask = 0b1110ULL << (56 * us);
 
-        print_bb(east_mask);
-        print_bb(west_mask);
-
         Bitboard occupied = ~empty;
 
-        
+        /* steps (perform bitwise?)
+        1. See if castling a particular way is possible (bits)
+        2. If so, generate a move that from kingpos to there
+        */
 
         if (us == WHITE) // can I avoid branching ?
         {
-            // if (!(east_white_mask & occupied))
+            if (!(east_mask & occupied) && (8 & castling_rights))
             {
                 move_list.push_back(0b1100000100000110); // hard-coded binary castling
             }
 
-            // if (!(west_white_mask & occupied))
+            if (!(west_mask & occupied) && (4 & castling_rights))
             {
                 move_list.push_back(0b1100000100000010); // hard-coded binary castling
             }
         }
 
-        else // us == BLACK
+        else
         {
+            if (!(east_mask & occupied) && (2 & castling_rights))
+            {
+                move_list.push_back(0b1100111100111110);
+            }
 
+            if (!(west_mask & occupied) && (1 & castling_rights))
+            {
+                move_list.push_back(0b1100111100111010);
+            }
         }
 
         return move_list;
