@@ -137,6 +137,24 @@ void write_bitboards_to_file(std::vector<Bitboard> bitboards, std::string filena
     outFile.close();
 }
 
+void write_table_to_file(std::vector<Bitboard> bitboards, std::string filename)
+{
+    std::ofstream outFile(filename);
+    if (outFile.is_open())
+    {
+        for (int i = 0; i < 64; i++)
+        {
+
+            outFile << "{" << std::endl;
+            for (int j = 0; j < bitboards.size(); j++)
+            {
+                outFile << std::format("0x{:X}ULL,", bitboards[j]) << std::endl;
+            }
+            outFile << "}," << std::endl;
+        }
+    }
+}
+
 void time_func(std::function<Bitboard(void)> func, int trial_count = 999999)
 {
 
@@ -153,61 +171,72 @@ void time_func(std::function<Bitboard(void)> func, int trial_count = 999999)
     std::cout << "Average duration: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start) / trial_count << std::endl;
 }
 
+Bitboard generate_rook_attacks(Square rook_square, Bitboard occupancy)
+{
+    Bitboard rook_bb = 0ULL;
+    Bitboard curr_ray_bb = 0ULL;
+    Bitboard final_rays = 0ULL;
+
+    set_bit(rook_bb, rook_square);
+
+    curr_ray_bb = rook_bb;
+
+    for (int i = 0; i <= 8; i++)
+    {
+        curr_ray_bb = north(curr_ray_bb);
+        final_rays |= curr_ray_bb;
+        if (curr_ray_bb & occupancy)
+        {
+            break;
+        }
+    }
+
+    curr_ray_bb = rook_bb;
+
+    for (int i = 0; i <= 8; i++)
+    {
+        curr_ray_bb = south(curr_ray_bb);
+        final_rays |= curr_ray_bb;
+        if (curr_ray_bb & occupancy)
+        {
+            break;
+        }
+    }
+
+    curr_ray_bb = rook_bb;
+
+    for (int i = 0; i <= 8; i++)
+    {
+        curr_ray_bb = east(curr_ray_bb);
+        final_rays |= curr_ray_bb;
+        if (curr_ray_bb & occupancy)
+        {
+            break;
+        }
+    }
+
+    curr_ray_bb = rook_bb;
+
+    for (int i = 0; i <= 8; i++)
+    {
+        curr_ray_bb = west(curr_ray_bb);
+        final_rays |= curr_ray_bb;
+        if (curr_ray_bb & occupancy)
+        {
+            break;
+        }
+    }
+
+    return final_rays;
+}
+
 int main()
 {
+    Bitboard d4_random_rook_perms = ROOK_BLOCKER_PERMUTATIONS[d4][200];
+    Bitboard rook_attacks_at_a3 = generate_rook_attacks(d4, d4_random_rook_perms);
 
-    // Bitboard bishop_a1 = 0x0040201008040200ULL;
-    // Bitboard magic_num = 0xffedf9fd7cfcffffULL;
-    // Bitboard pre_postmask = 0x8040201008040200ULL;
-
-    // print_bb(bishop_a1);
-    // print_bb(magic_num);
-    // print_bb(pre_postmask);
-
-    // print_bb((bishop_a1 & pre_postmask)* magic_num);
-
-    // Square sq = e4;
-
-    // Bitboard rook_rays = generate_rook_rays(sq);
-
-    // print_bb(rook_rays);
-
-    // Bitboard bishop_rays = generate_bishop_rays(sq);
-
-    // print_bb(bishop_rays);
-
-    // std::cout << "---------- Test section ----------" << std::endl;
-
-    // std::vector<Bitboard> a1_rook_blockers = generate_rook_blockers(a1);
-
-    // std::cout << a1_rook_blockers.size() << std::endl;
-
-    // write_bitboards_to_file(a1_rook_blockers, "pext_rook_masks.txt");
-
-    // std::ofstream outFile("pext_rook_masks.txt");
-    // if (outFile.is_open())
-    // {
-    //     for (int i = 0; i < 64; i++)
-    //     {
-
-    //         std::vector<Bitboard> blockers = generate_rook_blockers(i);
-    //         outFile << "{" << std::endl;
-    //         for (int j = 0; j < blockers.size(); j++)
-    //         {
-    //             outFile << std::format("0x{:X}ULL,", blockers[j]) << std::endl;
-    //         }
-    //         outFile << "}," << std::endl;
-    //     }
-    // }
-
-    // print_bb(0x101010101017CULL);
-
-    // int MOVES[2][2] = {
-    //     {1, 2},
-    //     {3, 4}
-    // };
-
-    print_bb(ROOK_BLOCKER_PERMUTATIONS[a2][2047]);
+    print_bb(d4_random_rook_perms);
+    print_bb(rook_attacks_at_a3);
 
     return 0;
 }
