@@ -14,7 +14,7 @@
 int main()
 {
     GameState *game = new GameState();
-    game->state = loadFromFen("rnbqkbnr/pppppppp/8/8/1B1PPP2/2N2NP1/PPPQ3P/R3KB1R w KQkq - 0 1");
+    game->state = loadFromFen("r3k2r/3NNN2/8/8/8/8/3nbn2/R1R1K2R w KQkq - 0 1");
     std::cout << getPrintableBoardState(game->state) << std::endl;
 
     Bitboard blackSide = game->getSideState(BLACK);
@@ -55,20 +55,25 @@ int main()
 
     std::cout << "Total knight moves: " << knight_quiets.size() + knight_captures.size() << std::endl;
 
-    // RAY movegen 
-    
+    // RAY movegen
+
     // King
+    std::vector<Move> king_captures = MoveGeneration::generateKingCaptures(blackSide, game->state.wKing);
+    std::vector<Move> king_quiets = MoveGeneration::generateKingQuiets(empty, game->state.wKing, game->state.castlingRights, WHITE);
+    
+    for (unsigned int i = 0; i < king_captures.size(); i++)
+    {
+        std::cout << "King capture " << i + 1 << " : " << std::format("{:016b}", king_captures[i]) << '\n';
+    }
+    
+    for (unsigned int i = 0; i < king_quiets.size(); i++)
+    {
+        std::cout << "King quiet " << i + 1 << " : " << std::format("{:016b}", king_quiets[i]) << '\n';
+    }
 
-    std::vector<Move> king_quiets = MoveGeneration::generateKingQuiets(empty, game->state.wKing, game->state.castlingRights, BLACK);
+    std::cout << "Total king moves: " << king_quiets.size() + king_captures.size() << std::endl;
 
-    // Castling move gen
-
-    //std::cout << std::format("{:016b}\n", MoveGeneration::convertToMove(c1, e1, TO_NONE, CASTLING));
-
-    Bitboard x = KNIGHT_MOVES[d6];
-    print_bb(x);
-    print_bb(-x);
-    print_bb(x & -x);
+    // std::cout << std::format("{:016b}\n", MoveGeneration::convertToMove(g8, e8, TO_NONE, CASTLING));
 
     return 0;
 }

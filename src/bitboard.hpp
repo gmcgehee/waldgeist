@@ -325,8 +325,9 @@ std::string getPrintableBoardState(BoardState state)
     return printableBoard;
 }
 
-BoardState loadFromFen(std::string const &fen)
+BoardState loadFromFen(std::string const fen)
     {
+        // NOTE: Move this to GameState class
 
         // White pieces are uppercase, black are lowercase
         // Empty space is denoted with a number 1-8
@@ -508,7 +509,7 @@ BoardState loadFromFen(std::string const &fen)
             {
                 std::string fullMoveCounter = fen.substr(i, fen.length() - i);
                 board.fullMoves = std::stoi(fullMoveCounter);
-                break; // do not run after field 5
+                break;
             }
         }
 
