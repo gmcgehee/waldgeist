@@ -73,7 +73,10 @@ int main()
 
     std::cout << "Total king moves: " << king_quiets.size() + king_captures.size() << std::endl;
 
-    // std::cout << std::format("{:016b}\n", MoveGeneration::convertToMove(g8, e8, TO_NONE, CASTLING));
+    GameState *game2 = new GameState();
+    game2->loadFromFen("2r3k1/1p2qpbp/p2p1np1/3Pp3/1PP1P3/P1N2N2/5PPP/2RQ2K1 w - - 0 23");
+
+    std::cout << std::format("{:016X}\n", game2->getSideState(BLACK) | game2->getSideState(WHITE));
 
     return 0;
 }
