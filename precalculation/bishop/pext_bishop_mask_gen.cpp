@@ -135,7 +135,7 @@ Bitboard generate_bishop_attacks(Square rook_square, Bitboard occupancy = 0ULL)
 
     return final_rays;
 }
-
+/*
 std::vector<std::vector<Bitboard>> generate_all_bishop_attacks()
 {
 
@@ -160,6 +160,7 @@ std::vector<std::vector<Bitboard>> generate_all_bishop_attacks()
 
     return all_attack_list;
 }
+*/
 
 int main()
 {
@@ -170,6 +171,12 @@ int main()
     Bitboard BISHOP_ATTACKS[64][4096] =
 
     */
+
+    // generate all bishop blockers
+
+    std::vector<std::vector<Bitboard>> TEMP_BISHOP_BLOCKERS(64, std::vector<Bitboard>(4096, 0));
+
+    // for (int i = 0; i )
 
     // Generate PEXT
 
