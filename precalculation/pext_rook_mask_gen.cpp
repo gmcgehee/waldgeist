@@ -12,6 +12,7 @@
 #include "rook_blocker_permutations.hpp"
 #include "rook_ray_masks.hpp"
 #include "rook_attack_tables.hpp"
+#include "temp_rook_attacks_attempt.hpp"
 
 Bitboard generate_rook_rays(Square rook_square)
 {
@@ -114,7 +115,7 @@ std::vector<Bitboard> generate_rook_blockers(Square rook_square)
 
     */
 
-    for (int i = 0; i <= (1 << N) - 1; i++)
+    for (Bitboard i = 0ULL; i <= (1ULL << N) - 1ULL; i++)
     {
         // as far as I can tell, this is the best way to do this:
         // NOTE: IF RAY MOVE GEN IS EVERY NOT WORKING, CHECK HERE. IT MAY MYSTERIOUSLY BE THIS
@@ -139,15 +140,37 @@ void write_bitboards_to_file(std::vector<Bitboard> bitboards, std::string filena
     outFile.close();
 }
 
+template <std::size_t ROWS, std::size_t COLS>
+std::vector<std::vector<Bitboard>> to_vector2d(Bitboard (&arr)[ROWS][COLS])
+{
+    std::vector<std::vector<Bitboard>> big_vec;
+
+    for (int i = 0; i < ROWS; i++)
+    {
+        std::vector<Bitboard> internal_vec;
+        big_vec.push_back(internal_vec);
+        for (int j = 0; j < COLS; j++)
+        {
+            big_vec[i].push_back(arr[i][j]);
+        }
+    }
+
+    return big_vec;
+}
+
 void write_table_to_file(std::vector<std::vector<Bitboard>> bitboards, std::string filename)
 {
-    std::ofstream outFile(filename);
+    std::ofstream outFile;
+
+    outFile.open(filename);
+
     if (outFile.is_open())
     {
+        std::cout << "it is actually writing something";
         for (int i = 0; i < 64; i++)
         {
             std::vector<Bitboard> curr_bitboard = bitboards[i];
-            outFile << "{" << std::endl;
+            outFile << "\n{" << std::endl;
             for (int j = 0; j < curr_bitboard.size(); j++)
             {
                 outFile << std::format("0x{:X}ULL,", curr_bitboard[j]) << std::endl;
@@ -155,6 +178,7 @@ void write_table_to_file(std::vector<std::vector<Bitboard>> bitboards, std::stri
             outFile << "}," << std::endl;
         }
     }
+    outFile.close();
 }
 
 void time_func(std::function<Bitboard(void)> func, int trial_count = 999999)
@@ -271,34 +295,59 @@ int main()
 
     // write_table_to_file(all_rook_attacks, "rook_attack_tables.hpp");
 
-    //  std::vector<Bitboard> rook_ray_bitboards;
-    //  for (int i = 0; i < 64; i++)
-    //  {
-    //      Bitboard rook_rays = generate_rook_rays(i);
-    //      rook_ray_bitboards.push_back(rook_rays);
-    //  }
+    // Generate PEXT
 
-    // write_bitboards_to_file(rook_ray_bitboards, "rook_ray_masks.hpp");
+    std::vector TEMP_ROOK_ATTACKS(64, std::vector<Bitboard>(4096, 0));
+
+    for (int i = 0; i < 64; i++)
+    {
+        std::vector<Bitboard> blockers = generate_rook_blockers(i);
+        Bitboard curr_rook_ray_mask = ROOK_RAY_MASKS[i];
+        for (Bitboard curr_blockers : blockers)
+        {
+            // Logical flow:
+            // Get the proper attackers for the blocker configuration
+            // Use PEXT to assign that an index
+            // push it forward
+            Bitboard curr_attacks = generate_rook_attacks(i, curr_blockers);
+
+            int index = (int)_pext_u64(curr_blockers, curr_rook_ray_mask);
+            // std::cout << index << std::endl;
+            TEMP_ROOK_ATTACKS[i][index] = curr_attacks;
+        }
+    }
+
+    // why can i just not write this !!?!?!?!?!??!?!?!??
+
+    // std::vector<std::vector<Bitboard>> temp_rook_attacks_vec = to_vector2d(TEMP_ROOK_ATTACKS);
+
+    // write_table_to_file(TEMP_ROOK_ATTACKS, "C:\\Users\\spiri\\comp_sci\\projects\\waldgeist\\precalculation\\temp_rook_attacks_attempt.hpp");
 
     Bitboard board_state = 0x44F269181625E04CULL;
 
-    Square rook_square = e7;
-    Bitboard rook_ray_mask = ROOK_RAY_MASKS[rook_square];
-    Bitboard occupancy = board_state;
+    Square rook_square = a6;
 
-    int rook_index = (int)_pext_u64(occupancy, rook_ray_mask);
-    Bitboard rook_attack = ROOK_ATTACKS[rook_square][rook_index];
-
-    print_bb(rook_ray_mask);
-    print_bb(occupancy);
-    print_bb(rook_index);
-    print_bb(rook_attack);
-
-    print_bb(ROOK_RAY_MASKS[e8]);
-
-    // print_bb(ROOK_BLOCKER_PERMUTATIONS[h8][3040]);
-
-    // print_bb(generate_rook_attacks(h8, ROOK_BLOCKER_PERMUTATIONS[h8][3040]));
-
+    // print_bb(rook_attack);
+    //  print_bb();
+    
+    for (Square square = 0; square < 64; square++)
+    {
+        Bitboard rook_ray_mask = ROOK_RAY_MASKS[square];
+        Bitboard occupancy = board_state;
+        
+        // how to use PEXT:
+        int rook_index = (int)_pext_u64(occupancy, rook_ray_mask);
+        Bitboard rook_attack = ROOK_ATTACKS_TEMP[square][rook_index];
+        Bitboard other_rook_attack = ROOK_ATTACKS[square][rook_index];
+        
+        std::cout << "\nNew rook attacks:" << std::endl;
+        print_bb(rook_attack);
+        
+        std::cout << "\nOld rook attacks:" << std::endl;
+        
+        print_bb(other_rook_attack);
+    }
+    
+    print_bb(board_state);
     return 0;
 }
