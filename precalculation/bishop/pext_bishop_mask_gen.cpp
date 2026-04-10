@@ -176,6 +176,12 @@ int main()
 
     std::vector<std::vector<Bitboard>> TEMP_BISHOP_BLOCKERS(64, std::vector<Bitboard>(4096, 0));
 
+    for (int i = 0; i < 64; i++) {
+        TEMP_BISHOP_BLOCKERS.push_back(generate_bishop_blockers(i));
+    }
+
+    write_table_to_file(TEMP_BISHOP_BLOCKERS, "C:\\Users\\spiri\\comp_sci\\projects\\waldgeist\\precalculation\\bishop\\bishop_blocker_permutations.hpp");
+
     // for (int i = 0; i )
 
     // Generate PEXT
@@ -204,6 +210,7 @@ int main()
     Bitboard board_state = 0x44F269181625E04CULL;
 
     Square bishop_square = e4;
+
     
     print_bb(board_state);
     return 0;

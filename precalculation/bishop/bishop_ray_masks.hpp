@@ -1,7 +1,8 @@
 #include "../../src/bitboard.hpp"
 #include "../../src/types.hpp"
 
-constexpr Bitboard ROOK_RAY_MASKS[64] =
+// quick glance: these look good
+constexpr Bitboard BISHOP_RAY_MASKS[64] =
 {
     0x40201008040200ULL,
     0x402010080400ULL,

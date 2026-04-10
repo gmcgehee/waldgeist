@@ -1,6 +1,7 @@
 #include "../../src/bitboard.hpp"
 #include "../../src/types.hpp"
 
+
 constexpr Bitboard ROOK_RAY_MASKS[64] =
 {0x101010101017EULL,
 0x202020202027CULL,
