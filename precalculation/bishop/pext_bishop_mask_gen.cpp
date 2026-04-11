@@ -9,7 +9,7 @@
 
 #include "../../src/bitboard.hpp"
 #include "../../src/types.hpp"
-#include "bishop_blocker_permutations.hpp"
+// #include "bishop_blocker_permutations.hpp"
 #include "bishop_ray_masks.hpp"
 #include "bishop_pext_tables.hpp"
 #include "../write_to_file.hpp"
@@ -174,13 +174,27 @@ int main()
 
     // generate all bishop blockers
 
-    std::vector<std::vector<Bitboard>> TEMP_BISHOP_BLOCKERS(64, std::vector<Bitboard>(4096, 0));
+    std::vector<std::vector<Bitboard>> TEMP_BISHOP_BLOCKERS(64, std::vector<Bitboard>(4096, 0ULL));
 
-    for (int i = 0; i < 64; i++) {
-        TEMP_BISHOP_BLOCKERS.push_back(generate_bishop_blockers(i));
+    for (int i = 0; i < 64; i++)
+    {
+        std::vector<Bitboard> curr_blockers = generate_bishop_blockers(i);
+        // pretty_print_vector(curr_blockers);
+
+        for (int j = 0; j < curr_blockers.size(); j++)
+        {
+            TEMP_BISHOP_BLOCKERS.at(i).at(j) = curr_blockers[j];
+
+            if (i == 12)
+                printf("\nCurrent Bitboard1: %llu", TEMP_BISHOP_BLOCKERS.at(i).at(j));
+        } 
+        // if (i == 12) pretty_print_vector(TEMP_BISHOP_BLOCKERS[i]);
     }
 
-    write_table_to_file(TEMP_BISHOP_BLOCKERS, "C:\\Users\\spiri\\comp_sci\\projects\\waldgeist\\precalculation\\bishop\\bishop_blocker_permutations.hpp");
+    // pretty_print_vector(TEMP_BISHOP_BLOCKERS[12]);
+
+    // pretty_print_vector(TEMP_BISHOP_BLOCKERS[3]);
+
 
     // for (int i = 0; i )
 
@@ -211,7 +225,5 @@ int main()
 
     Square bishop_square = e4;
 
-    
-    print_bb(board_state);
     return 0;
 }

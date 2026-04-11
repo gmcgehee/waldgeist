@@ -6,6 +6,7 @@
 #include <chrono>
 #include <functional>
 #include <fstream>
+#include <stdio.h>
 
 #include "../src/bitboard.hpp"
 #include "../src/types.hpp"
@@ -53,6 +54,16 @@ void write_list_to_file(std::vector<Bitboard> bitboards, std::string filename)
         outFile << "}," << std::endl;
     }
     outFile.close();
+}
+
+void pretty_print_vector(std::vector<Bitboard> bitboards)
+{
+    printf("\nStart");
+    for (int i = 0; i < bitboards.size(); i++)
+    {
+        printf("\nValue: %llu", bitboards[i]);
+    }
+    printf("\nEnd");
 }
 
 void time_func(std::function<Bitboard(void)> func, int trial_count = 999999)
