@@ -179,63 +179,7 @@ int main()
     Bitboard ROOK_ATTACKS[64][4096] =
 
     */
-    // std::vector<std::vector<Bitboard>> all_rook_attacks = generate_all_rook_attacks();
 
-    // write_table_to_file(all_rook_attacks, "rook_attack_tables.hpp");
-
-    // Generate PEXT
-
-    std::vector TEMP_ROOK_ATTACKS(64, std::vector<Bitboard>(4096, 0));
-
-    for (int i = 0; i < 64; i++)
-    {
-        std::vector<Bitboard> blockers = generate_bishop_blockers(i);
-        Bitboard curr_rook_ray_mask = ROOK_RAY_MASKS[i];
-        for (Bitboard curr_blockers : blockers)
-        {
-            // Logical flow:
-            // Get the proper attackers for the blocker configuration
-            // Use PEXT to assign that an index
-            // push it forward
-            Bitboard curr_attacks = generate_bishop_attacks(i, curr_blockers);
-
-            int index = (int)_pext_u64(curr_blockers, curr_rook_ray_mask);
-            // std::cout << index << std::endl;
-            TEMP_ROOK_ATTACKS[i][index] = curr_attacks;
-        }
-    }
-
-    // why can i just not write this !!?!?!?!?!??!?!?!??
-
-    // std::vector<std::vector<Bitboard>> temp_rook_attacks_vec = to_vector2d(TEMP_ROOK_ATTACKS);
-
-    // write_table_to_file(TEMP_ROOK_ATTACKS, "C:\\Users\\spiri\\comp_sci\\projects\\waldgeist\\precalculation\\temp_rook_attacks_attempt.hpp");
-
-    Bitboard board_state = 0x44F269181625E04CULL;
-
-    Square rook_square = a6;
-
-    // print_bb(rook_attack);
-    //  print_bb();
     
-    for (Square square = 0; square < 64; square++)
-    {
-        Bitboard rook_ray_mask = ROOK_RAY_MASKS[square];
-        Bitboard occupancy = board_state;
-        
-        // how to use PEXT:
-        int rook_index = (int)_pext_u64(occupancy, rook_ray_mask);
-        Bitboard rook_attack = ROOK_PEXT_TABLES[square][rook_index];
-        Bitboard other_rook_attack = OLD_ROOK_ATTACKS[square][rook_index];
-        
-        std::cout << "\nNew rook attacks:" << std::endl;
-        print_bb(rook_attack);
-        
-        std::cout << "\nOld rook attacks:" << std::endl;
-        
-        print_bb(other_rook_attack);
-    }
-    
-    print_bb(board_state);
     return 0;
 }

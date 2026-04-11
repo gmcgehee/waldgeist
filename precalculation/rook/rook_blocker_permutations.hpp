@@ -1,4 +1,4 @@
-
+#pragma once
 #include "../../src/bitboard.hpp"
 #include "../../src/types.hpp"
 
