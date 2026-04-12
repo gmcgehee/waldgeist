@@ -2,10 +2,15 @@
 
 #include <vector>
 #include <bit>
+#include <immintrin.h>
 
 #include "bitboard.hpp"
 #include "types.hpp"
 #include "tables.hpp"
+#include "../precalculation/bishop/bishop_pext_tables.hpp"
+#include "../precalculation/bishop/bishop_ray_masks.hpp"
+#include "../precalculation/rook/rook_pext_tables.hpp"
+#include "../precalculation/rook/rook_ray_masks.hpp"
 
 namespace MoveGeneration
 {
@@ -201,22 +206,128 @@ namespace MoveGeneration
         return move_list;
     }
 
-    // todo
-    std::vector<Move> generateBishopCaptures(Bitboard their_state, Bitboard our_b_state);
+    // todo: currently returns captures and quiets as one thing
+    std::vector<Move> generateBishopMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state)
+    {
 
-    // todo
+        std::vector<Move> move_list;
+
+        /*
+        Logical ordering:
+        Generate all bishop moves given bishop current position and blockers (~empty)
+        & it with their state
+        return move list
+
+        considerations: it's going to have to pop off one bit at a time anyways. what if I generate all possible moves right here, but with captures at the beginning?
+        how would I mak
+        */
+
+        // O(bishop_count) time complexity
+        while (our_b_state)
+        {
+            Square origin = pop_lsb(our_b_state);
+            int pext_index = (int)_pext_u64(occ, BISHOP_RAY_MASKS[origin]);
+            Bitboard moves = BISHOP_PEXT_TABLES[origin][pext_index];
+            Bitboard captures = moves & their_state;
+            Bitboard quiets = moves & empty;
+
+            while (captures)
+            {
+                Square destination = pop_lsb(captures);
+                Move move = convertToMove(destination, origin);
+                move_list.push_back(move);
+            }
+
+            while (quiets)
+            {
+                Square destination = pop_lsb(quiets);
+                Move move = convertToMove(destination, origin);
+                move_list.push_back(move);
+            }
+        }
+
+        return move_list;
+    }
+
+    // NOTE: currently unused
+    std::vector<Move> generateBishopCaptures(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state);
+
+    // NOTE: currently unused
     std::vector<Move> generateBishopQuiets(Bitboard empty, Bitboard our_b_state);
 
-    // todo
+    std::vector<Move> generateRookMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_r_state)
+    {
+
+        std::vector<Move> move_list;
+
+        while (our_r_state)
+        {
+            Square origin = pop_lsb(our_r_state);
+            int pext_index = (int)_pext_u64(occ, ROOK_RAY_MASKS[origin]);
+            Bitboard moves = ROOK_PEXT_TABLES[origin][pext_index];
+            Bitboard captures = moves & their_state;
+            Bitboard quiets = moves & empty;
+
+            while (captures)
+            {
+                Square destination = pop_lsb(captures);
+                Move move = convertToMove(destination, origin);
+                move_list.push_back(move);
+            }
+
+            while (quiets)
+            {
+                Square destination = pop_lsb(quiets);
+                Move move = convertToMove(destination, origin);
+                move_list.push_back(move);
+            }
+        }
+
+        return move_list;
+    }
+
+    // NOTE: currently unused
     std::vector<Move> generateRookCaptures(Bitboard empty, Bitboard our_r_state);
 
-    // todo
+    // NOTE: currently unused
     std::vector<Move> generateRookQuiets(Bitboard empty, Bitboard our_r_state);
 
-    // todo
+    std::vector<Move> generateQueenMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_q_state)
+    {
+        std::vector<Move> move_list;
+
+        while (our_q_state)
+        {
+            Square origin = pop_lsb(our_q_state);
+            int line_pext_index = (int)_pext_u64(occ, ROOK_RAY_MASKS[origin]);
+            int diag_pext_index = (int)_pext_u64(occ, BISHOP_RAY_MASKS[origin]);
+
+            Bitboard moves = ROOK_PEXT_TABLES[origin][line_pext_index] & BISHOP_PEXT_TABLES[origin][diag_pext_index];
+            Bitboard captures = moves & their_state;
+            Bitboard quiets = moves & empty;
+
+            while (captures)
+            {
+                Square destination =  pop_lsb(captures);
+                Move move = convertToMove(destination, origin);
+                move_list.push_back(move);
+            }
+
+            while (quiets)
+            {
+                Square destination = pop_lsb(quiets);
+                Move move = convertToMove(destination, origin);
+                move_list.push_back(move);
+            }
+        }
+
+        return move_list;
+    }
+
+    // NOTE: currently unused
     std::vector<Move> generateQueenCaptures(Bitboard their_state, Bitboard our_q_state);
 
-    // todo
+    // NOTE: currently unused
     std::vector<Move> generateQueenQuiets(Bitboard empty, Bitboard our_q_state);
 
     std::vector<Move> generateKingCaptures(Bitboard their_state, Bitboard our_k_state)
