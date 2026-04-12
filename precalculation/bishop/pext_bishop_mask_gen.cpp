@@ -136,7 +136,6 @@ Bitboard generate_bishop_attacks(Square rook_square, Bitboard occupancy = 0ULL)
     return final_rays;
 }
 
-
 std::vector<std::vector<Bitboard>> generate_all_bishop_attacks()
 {
 
@@ -145,7 +144,7 @@ std::vector<std::vector<Bitboard>> generate_all_bishop_attacks()
     for (Square sq = 0; sq < 64; sq++)
     {
         std::vector<Bitboard> curr_attack_list;
-        for (int idx = 0; idx < 4096; idx++)
+        for (int idx = 0; idx < 512; idx++)
         {
 
             Bitboard curr_blocker_permutation = BISHOP_BLOCKER_PERMUTATIONS[sq][idx];
@@ -153,6 +152,7 @@ std::vector<std::vector<Bitboard>> generate_all_bishop_attacks()
             {
                 continue;
             }
+
             Bitboard curr_atack = generate_bishop_attacks(sq, curr_blocker_permutation);
             curr_attack_list.push_back(curr_atack);
         }
@@ -162,6 +162,31 @@ std::vector<std::vector<Bitboard>> generate_all_bishop_attacks()
     return all_attack_list;
 }
 
+std::vector<std::vector<Bitboard>> generate_all_bishop_pext_tables()
+{
+
+    std::vector TEMP_BISHOP_ATTACKS(64, std::vector<Bitboard>(512, 0));
+
+    // Logical flow:
+    // Get the proper attackers for the blocker configuration
+    // Use PEXT to assign that an index
+    // push it forward
+
+    for (Square square = 0; square < 64; square++)
+    {
+        std::vector<Bitboard> blockers = generate_bishop_blockers(square);
+        Bitboard curr_bishop_ray_mask = BISHOP_RAY_MASKS[square];
+
+        for (Bitboard curr_blockers : blockers)
+        {
+            Bitboard curr_attacks = generate_bishop_attacks(square, curr_blockers);
+            int index = (int)_pext_u64(curr_blockers, curr_bishop_ray_mask);
+            TEMP_BISHOP_ATTACKS.at(square).at(index) = curr_attacks;
+        }
+    }
+
+    return TEMP_BISHOP_ATTACKS;
+}
 
 int main()
 {
@@ -173,14 +198,18 @@ int main()
 
     */
 
-    
-    
+    // std::vector<std::vector<Bitboard>> bishop_pext_tables = generate_all_bishop_pext_tables();
+    // write_table_to_file(bishop_pext_tables, "bishop_pext_tables.hpp");
 
-    std::vector TEMP_BISHOP_ATTACKS(64, std::vector<Bitboard>(512, 0));
+    Bitboard board_state = 0x44F269181625E04CULL;
 
-    // Bitboard board_state = 0x44F269181625E04CULL;
+    Square bishop_square = a7;
 
-    Square bishop_square = e4;
+    int pext_index = (int)_pext_u64(board_state, BISHOP_RAY_MASKS[bishop_square]);
+    Bitboard bishop_attack = BISHOP_PEXT_TABLES[bishop_square][pext_index];
+
+    print_bb(bishop_attack);
+    print_bb(board_state);
 
     return 0;
 }
