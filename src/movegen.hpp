@@ -302,7 +302,7 @@ namespace MoveGeneration
             int line_pext_index = (int)_pext_u64(occ, ROOK_RAY_MASKS[origin]);
             int diag_pext_index = (int)_pext_u64(occ, BISHOP_RAY_MASKS[origin]);
 
-            Bitboard moves = ROOK_PEXT_TABLES[origin][line_pext_index] & BISHOP_PEXT_TABLES[origin][diag_pext_index];
+            Bitboard moves = ROOK_PEXT_TABLES[origin][line_pext_index] | BISHOP_PEXT_TABLES[origin][diag_pext_index];
             Bitboard captures = moves & their_state;
             Bitboard quiets = moves & empty;
 

@@ -14,17 +14,20 @@
 int main()
 {
     GameState *game = new GameState();
-    game->state = loadFromFen("r3k2r/3NNN2/8/8/8/8/3nbn2/R1R1K2R w KQkq - 0 1");
+    game->state = loadFromFen("r2q1rk1/p1p2pbp/1pn1pnp1/2bP4/2B1P3/2N2N2/PPP1QPPP/R1B2RK1 w - - 0 1");
     std::cout << getPrintableBoardState(game->state) << std::endl;
 
     Bitboard blackSide = game->getSideState(BLACK);
     Bitboard whiteSide = game->getSideState(WHITE);
-    Bitboard empty = ~(whiteSide | blackSide);
+    Bitboard occ = whiteSide | blackSide;
+    Bitboard empty = ~(occ);
+    Bitboard their_state = whiteSide;
+    Side us = BLACK;
 
     // Pawn movegen testing
 
-    std::vector<Move> pawn_captures = MoveGeneration::generatePawnCaptures(blackSide, game->state.wPawn, WHITE, game->state.enPassantSquare);
-    std::vector<Move> pawn_pushes = MoveGeneration::generatePawnPushes(empty, game->state.wPawn, WHITE);
+    std::vector<Move> pawn_captures = MoveGeneration::generatePawnCaptures(their_state, game->state.bPawn, us, game->state.enPassantSquare);
+    std::vector<Move> pawn_pushes = MoveGeneration::generatePawnPushes(empty, game->state.bPawn, us);
 
     for (unsigned int i = 0; i < pawn_captures.size(); i++)
     {
@@ -39,8 +42,8 @@ int main()
     std::cout << "Total pawn moves: " << pawn_pushes.size() + pawn_captures.size() << std::endl;
 
     // Knight movegen testing
-    std::vector<Move> knight_captures = MoveGeneration::generateKnightCaptures(blackSide, game->state.wKnight);
-    std::vector<Move> knight_quiets = MoveGeneration::generateKnightQuiets(empty, game->state.wKnight);
+    std::vector<Move> knight_captures = MoveGeneration::generateKnightCaptures(their_state, game->state.bKnight);
+    std::vector<Move> knight_quiets = MoveGeneration::generateKnightQuiets(empty, game->state.bKnight);
 
     for (unsigned int i = 0; i < knight_captures.size(); i++)
     {
@@ -57,9 +60,42 @@ int main()
 
     // RAY movegen
 
+    // Bishop movegen testing
+    std::vector<Move> bishop_moves = MoveGeneration::generateBishopMoves(occ, empty, their_state, game->state.bBishop);
+
+    for (unsigned int i = 0; i < bishop_moves.size(); i++)
+    {
+
+        std::cout << "Bishop move " << i + 1 << " : " << std::format("{:016b}", bishop_moves[i]) << '\n';
+    }
+
+    // Rook
+    std::vector<Move> rook_moves = MoveGeneration::generateRookMoves(occ, empty, their_state, game->state.bRook);
+
+    for (unsigned int i = 0; i < rook_moves.size(); i++)
+    {
+
+        std::cout << "Rook move " << i + 1 << " : " << std::format("{:016b}", rook_moves[i]) << '\n';
+    }
+
+
+    std::cout << "Total rook moves: " << rook_moves.size() << std::endl;
+
+    // Queen
+    std::vector<Move> queen_moves = MoveGeneration::generateQueenMoves(occ, empty, their_state, game->state.bQueen);
+
+    for (unsigned int i = 0; i < queen_moves.size(); i++)
+    {
+
+        std::cout << "Queen move " << i + 1 << " : " << std::format("{:016b}", queen_moves[i]) << '\n';
+    }
+
+
+    std::cout << "Total queen moves: " << queen_moves.size() << std::endl;
+
     // King
-    std::vector<Move> king_captures = MoveGeneration::generateKingCaptures(blackSide, game->state.wKing);
-    std::vector<Move> king_quiets = MoveGeneration::generateKingQuiets(empty, game->state.wKing, game->state.castlingRights, WHITE);
+    std::vector<Move> king_captures = MoveGeneration::generateKingCaptures(their_state, game->state.bKing);
+    std::vector<Move> king_quiets = MoveGeneration::generateKingQuiets(empty, game->state.bKing, game->state.castlingRights, us);
     
     for (unsigned int i = 0; i < king_captures.size(); i++)
     {
@@ -72,11 +108,6 @@ int main()
     }
 
     std::cout << "Total king moves: " << king_quiets.size() + king_captures.size() << std::endl;
-
-    GameState *game2 = new GameState();
-    game2->loadFromFen("2r3k1/1p2qpbp/p2p1np1/3Pp3/1PP1P3/P1N2N2/5PPP/2RQ2K1 w - - 0 23");
-
-    std::cout << std::format("{:016X}\n", game2->getSideState(BLACK) | game2->getSideState(WHITE));
 
     return 0;
 }
