@@ -104,6 +104,7 @@ namespace MoveGeneration
 
     std::vector<Move> generatePawnPushes(Bitboard empty, Bitboard our_p_state, Side us)
     {
+        // TODO: include promotions
         // how is it labelled that there will be an en passant square?
         std::vector<Move> move_list = {};
         move_list.reserve(16);

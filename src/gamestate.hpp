@@ -237,6 +237,12 @@ public:
         }
     }
 
+    Piece getPieceAt(Square square) {
+        return mailbox[square];
+    }
+
+    /// @brief  Moves one piece 
+    /// @param move A 16-bit integer. Bits 0-5 hold origin, 6-11 hold destination, and 12-16 include special move flags and promotion piece type (not in that order).
     void make(Move move)
     {
 
