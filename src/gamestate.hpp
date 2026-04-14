@@ -1,15 +1,19 @@
 #pragma once
 
+#include <string>
+#include <set>
+
 #include "types.hpp"
 #include "bitboard.hpp"
-#include <string>
 
 class GameState
 {
 
 public:
+
     BoardState state;
     std::array<Piece, 64> mailbox;
+    std::set<Square> attacked_squares;
 
     GameState(std::string fen = "")
     {
@@ -237,6 +241,10 @@ public:
         }
     }
 
+    Bitboard getFullState() {
+        return getSideState(BLACK) & getSideState(WHITE);
+    }
+
     Piece getPieceAt(Square square) {
         return mailbox[square];
     }
@@ -260,6 +268,8 @@ public:
 
         */
     }
+
+
 
     void unmake(Move move)
     {
