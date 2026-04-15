@@ -10,7 +10,6 @@ class GameState
 {
 
 public:
-
     BoardState state;
     std::array<Piece, 64> mailbox;
     std::set<Square> attacked_squares;
@@ -23,10 +22,36 @@ public:
         }
     }
 
-    void setupDefaultBoard()
+    void loadDefaultBoard()
     {
         // Convenience method
         loadFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    }
+
+    // GPT generated
+    void resetBoardState()
+    {
+        state.wPawn = 0ULL;
+        state.wKnight = 0ULL;
+        state.wBishop = 0ULL;
+        state.wRook = 0ULL;
+        state.wQueen = 0ULL;
+        state.wKing = 0ULL;
+
+        state.bPawn = 0ULL;
+        state.bKnight = 0ULL;
+        state.bBishop = 0ULL;
+        state.bRook = 0ULL;
+        state.bQueen = 0ULL;
+        state.bKing = 0ULL;
+
+        state.castlingRights = 0U;
+        state.enPassantSquare = 0U;
+
+        state.halfMoves = 0U;
+        state.fullMoves = 0U;
+
+        state.sideToPlay = Side::WHITE;
     }
 
     void loadFromFen(std::string const fen)
@@ -37,6 +62,8 @@ public:
         // Empty space is denoted with a number 1-8
         // Sample FEN: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
         //             where each piece is                       _ to play _ castling rights _ en passant square _ halfmove counter _ fullmove counter
+
+        resetBoardState();
 
         u8 curr_row = 7;  // row 8
         u8 curr_file = 0; // file a
@@ -241,15 +268,21 @@ public:
         }
     }
 
-    Bitboard getFullState() {
+    Bitboard getFullState()
+    {
         return getSideState(BLACK) & getSideState(WHITE);
     }
 
-    Piece getPieceAt(Square square) {
+    Piece getPieceAt(Square square)
+    {
         return mailbox[square];
     }
 
-    /// @brief  Moves one piece 
+    bool isSquareThreatened(Square square)
+    {
+    }
+
+    /// @brief  Moves one piece
     /// @param move A 16-bit integer. Bits 0-5 hold origin, 6-11 hold destination, and 12-16 include special move flags and promotion piece type (not in that order).
     void make(Move move)
     {
@@ -268,8 +301,6 @@ public:
 
         */
     }
-
-
 
     void unmake(Move move)
     {

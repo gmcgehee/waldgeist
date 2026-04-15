@@ -440,4 +440,32 @@ namespace MoveGeneration
         return move_list;
     }
 
+    std::vector<Move> generateAllCaptures(
+        Bitboard occ, Bitboard empty, Bitboard their_state, Side us,
+        Bitboard our_p_state, Bitboard our_n_state, Bitboard our_b_state,
+        Bitboard our_r_state, Bitboard our_q_state, Bitboard our_k_state,
+        u8 castling_rights, Square en_passant_square = 0)
+    {
+        std::vector<Move> move_list;
+        move_list.reserve(256);
+
+        // gpt generated
+        auto append_moves = [&move_list](std::vector<Move> &&moves)
+        {
+            move_list.insert(
+                move_list.end(),
+                std::make_move_iterator(moves.begin()),
+                std::make_move_iterator(moves.end()));
+        };
+
+        append_moves(generatePawnCaptures(their_state, our_p_state, us, en_passant_square));
+        append_moves(generateKnightCaptures(their_state, our_n_state));
+        // append_moves(generateBishopCaptures(occ, empty, their_state, our_b_state));
+        // append_moves(generateRookCaptures(occ, empty, their_state, our_r_state));
+        // append_moves(generateQueenCaptures(occ, empty, their_state, our_q_state));
+        append_moves(generateKingCaptures(their_state, our_k_state));
+
+        return move_list;
+    }
+
 }
