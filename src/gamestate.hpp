@@ -300,6 +300,16 @@ public:
             Update both the mailbox and the bitboards!
 
         */
+
+        Square origin = move & 0x1F;
+        Square destination = (move >> 6) & 0x1F;
+        u8 promotion_piece = ((move >> 12) & 0x3) + 2; // adds 2 because 0 means knight, but in the enum it means empty
+        u8 flag = (move >> 14);
+
+        Piece piece_on_origin = getPieceAt(origin);
+        Piece piece_on_destination = getPieceAt(destination);
+
+        
     }
 
     void unmake(Move move)

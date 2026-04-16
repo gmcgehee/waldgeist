@@ -20,9 +20,9 @@ enum PieceType : int {
     EMPTY = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6
 };
 
-enum PromotionPiece : int {
-    TO_NONE, TO_KNIGHT, TO_BISHOP, TO_ROOK, TO_QUEEN
-};
+// enum PromotionPiece : int {
+//     TO_NONE, TO_KNIGHT, TO_BISHOP, TO_ROOK, TO_QUEEN
+// };
 
 enum BoardSquares : Square {
     a1, b1, c1, d1, e1, f1, g1, h1,
