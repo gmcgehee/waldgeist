@@ -67,7 +67,7 @@ inline Bitboard southe(Bitboard bb)
 
 inline bool get_bit(Bitboard &bb, Square sq)
 {
-    return bb & (1ULL << sq);
+    return (bb & (1ULL << sq)) > 0;
 }
 
 inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we need to change it

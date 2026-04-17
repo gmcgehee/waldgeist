@@ -15,7 +15,7 @@
 namespace MoveGeneration
 {
 
-    inline Move convertToMove(Square destination, Square origin, PieceType promotion_piece = EMPTY, SpecialMoveFlag flag = NONSPECIAL)
+    inline Move convertToMove(Square destination, Square origin, PieceType promotion_piece = PAWN, SpecialMoveFlag flag = NONSPECIAL)
     {
 
         // From official Stockfish code:
@@ -61,6 +61,15 @@ namespace MoveGeneration
             {
                 destination = pop_lsb(east_captures);
                 origin = destination - 9;
+                if (destination >= a8)
+                {
+                    for (int piece = 0; piece < KING - 1; piece++)
+                    {
+                        Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
+                        move_list.push_back(move);
+                    }
+                    break;
+                }
                 Move move = convertToMove(destination, origin);
                 move_list.push_back(move);
             }
@@ -71,6 +80,15 @@ namespace MoveGeneration
             {
                 destination = pop_lsb(west_captures);
                 origin = destination - 7;
+                if (destination >= a8)
+                {
+                    for (int piece = 0; piece < KING - 1; piece++)
+                    {
+                        Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
+                        move_list.push_back(move);
+                    }
+                    break;
+                }
                 Move move = convertToMove(destination, origin);
                 move_list.push_back(move);
             }
@@ -84,6 +102,15 @@ namespace MoveGeneration
             {
                 destination = pop_lsb(east_captures);
                 origin = destination + 7;
+                if (destination <= h1)
+                {
+                    for (int piece = 0; piece < KING - 1; piece++)
+                    {
+                        Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
+                        move_list.push_back(move);
+                    }
+                    break;
+                }
                 Move move = convertToMove(destination, origin);
                 move_list.push_back(move);
             }
@@ -94,6 +121,15 @@ namespace MoveGeneration
             {
                 destination = pop_lsb(west_captures);
                 origin = destination + 9;
+                if (destination <= h1)
+                {
+                    for (int piece = 0; piece < KING - 1; piece++)
+                    {
+                        Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
+                        move_list.push_back(move);
+                    }
+                    break;
+                }
                 Move move = convertToMove(destination, origin);
                 move_list.push_back(move);
             }

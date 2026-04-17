@@ -89,3 +89,12 @@ struct BoardState
 
     Side sideToPlay = Side::WHITE;
 };
+
+struct Undo 
+{
+    Move move;
+    Piece captured;
+    Square en_passant_square;
+    u8 castling_rights;
+    u8 halfmoves;
+};

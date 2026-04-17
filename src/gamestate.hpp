@@ -46,6 +46,11 @@ public:
         state.fullMoves = 0U;
 
         state.sideToPlay = Side::WHITE;
+
+        for (int i = 0; i < 64; i++)
+        {
+            mailbox[i] = Piece{EMPTY, WHITE, NULL};
+        }
     }
 
     void loadFromFen(std::string const fen)
@@ -251,6 +256,8 @@ public:
     inline void unsetPieceAt(Square square)
     {
         Piece piece = getPieceAt(square);
+        if (piece.piece_type == EMPTY)
+            return;
         mailbox[square] = Piece{EMPTY, WHITE, NULL};
         unset_bit(*piece.piece_bb, square);
     }
@@ -261,8 +268,10 @@ public:
 
     /// @brief  Moves one piece
     /// @param move A 16-bit integer. Bits 0-5 hold origin, 6-11 hold destination, and 12-16 include special move flags and promotion piece type (not in that order).
-    void make(Move move)
+    Undo make(Move move)
     {
+
+        // I somehow need to check if the king will continue to be in check after making a move, but without making the move
 
         /*
 
@@ -278,39 +287,114 @@ public:
 
         */
 
-        Square origin = move & 0x1F;
-        Square destination = (move >> 6) & 0x1F;
-        u8 promotion_piece = ((move >> 12) & 0x3) + 2; // adds 2 because 0 means knight, but in the enum it means empty
+        Undo undo;
+
+        // DECONSTRUCT THE MOVE
+        Square destination = move & 0x3F;
+        Square origin = (move >> 6) & 0x3F;
+        u8 promotion_piece = ((move >> 12) & 0x3); // adds 2 because 0 means knight, but in the enum it means empty
         u8 flag = (move >> 14);
 
+        // Get pieces at squares in order to determine captures
         Piece piece_on_origin = getPieceAt(origin);
+        if (piece_on_origin.piece_type == EMPTY)
+            throw "`make()` attempted to move empty piece square.";
+        Side us = piece_on_origin.color;
+
         Piece piece_on_destination = getPieceAt(destination);
 
-        unsetPieceAt(origin); // is this always done? I believe so...
+        // Modify non-piece BoardState elements
 
-        if (flag == NONSPECIAL)
+        if (piece_on_destination.piece_type != EMPTY)
+            state.halfMoves = 0;
+        state.fullMoves += state.sideToPlay == BLACK ? 1 : 0; // every time Black plays, fullMoves increases by 1
+        state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
+
+        // Pawn specialties
+
+        // If there's a pawn moving onto the en passant square, it is guaranteed to be capturing.
+        // Due to the rules of chess, it's not possible for another pawn to move onto the en passant square except for a capture.
+        if (piece_on_origin.piece_type == PAWN)
         {
-            setPieceAt(destination, piece_on_origin);
+            state.halfMoves = 0;
+            if (destination == state.enPassantSquare)
+            {
+                int direction = us == WHITE ? -1 : 1;
+                unsetPieceAt(destination + 8 * direction);
+            }
         }
-        else if (flag == PROMOTION)
-        {
 
+        state.enPassantSquare = 0;
+
+        unsetPieceAt(origin); // is this always done? I believe so...
+        setPieceAt(destination, piece_on_origin);
+
+        // Modify the game state in a unique manner in special circumstances
+        switch (flag)
+        {
+        case NONSPECIAL:
+            break;
+        case PROMOTION:
             switch (promotion_piece)
             {
-            case QUEEN:
-                // setPieceAt(destination, ) break;
             case KNIGHT:
+                setPieceAt(destination, Piece{KNIGHT, us, &state.pieces[us][KNIGHT]});
                 break;
             case BISHOP:
+                setPieceAt(destination, Piece{BISHOP, us, &state.pieces[us][BISHOP]});
                 break;
-
+            case QUEEN:
+                setPieceAt(destination, Piece{QUEEN, us, &state.pieces[us][QUEEN]});
+                break;
             default:
                 break;
             }
+            break;
+        case EN_PASSANT:
+            // this needs to unset the piece one above or one below the en passant square. One above if us == WHITE, opposite otherwise
+            {
+                int direction = us == WHITE ? -1 : 1;
+                state.enPassantSquare = destination + (8 * direction);
+            }
+            break;
+        case CASTLING:
+            // needs logic to test if the squares in-between are in check and remove castling rights
+            /*
+             Steps:
+             1. determine black/white
+             2. determine kingside/queenside
+            */
+
+            Square king_square = pop_lsb(state.pieces[us][KING]);
+
+            int direction = us == WHITE ? -1 : 1;
+            switch (destination - origin)
+            {
+            case 2: // if the king is moving two to the left, e.g. queenside
+                if (isSquareThreatened(king_square) or isSquareThreatened(king_square - 1) or isSquareThreatened(king_square - 2))
+                    unmake(move, undo);
+                break;
+            case -2: // if the king is moving two to the right, e.g. kingside
+                if (isSquareThreatened(king_square) or isSquareThreatened(king_square + 1) or isSquareThreatened(king_square + 2))
+                    unmake(move, undo);
+                break;
+            default:
+                break;
+            }
+            break;
+        default:
+            break;
         }
+
+        if (isSquareThreatened(pop_lsb(state.pieces[us][KING])))
+        {
+            unmake(move, undo);
+        }
+
+        return undo;
     }
 
-    void unmake(Move move)
+    void unmake(Move move, Undo undo)
     {
     }
 };
