@@ -34,12 +34,12 @@ public:
         Bitboard our_state = gamestate.getSideState(us);
         Bitboard their_state = gamestate.getSideState(them);
 
-        Bitboard our_p_state = (us == WHITE) ? gamestate.state.wPawn : gamestate.state.bPawn;
-        Bitboard our_n_state = (us == WHITE) ? gamestate.state.wKnight : gamestate.state.bKnight;
-        Bitboard our_b_state = (us == WHITE) ? gamestate.state.wBishop : gamestate.state.bBishop;
-        Bitboard our_r_state = (us == WHITE) ? gamestate.state.wRook : gamestate.state.bRook;
-        Bitboard our_q_state = (us == WHITE) ? gamestate.state.wQueen : gamestate.state.bQueen;
-        Bitboard our_k_state = (us == WHITE) ? gamestate.state.wKing : gamestate.state.bKing;
+        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
+        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
+        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
+        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
+        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
+        Bitboard our_k_state = gamestate.state.pieces[us][KING];
 
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
@@ -88,12 +88,12 @@ public:
         Bitboard our_state = gamestate.getSideState(us);
         Bitboard their_state = gamestate.getSideState(them);
 
-        Bitboard our_p_state = (us == WHITE) ? gamestate.state.wPawn : gamestate.state.bPawn;
-        Bitboard our_n_state = (us == WHITE) ? gamestate.state.wKnight : gamestate.state.bKnight;
-        Bitboard our_b_state = (us == WHITE) ? gamestate.state.wBishop : gamestate.state.bBishop;
-        Bitboard our_r_state = (us == WHITE) ? gamestate.state.wRook : gamestate.state.bRook;
-        Bitboard our_q_state = (us == WHITE) ? gamestate.state.wQueen : gamestate.state.bQueen;
-        Bitboard our_k_state = (us == WHITE) ? gamestate.state.wKing : gamestate.state.bKing;
+        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
+        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
+        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
+        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
+        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
+        Bitboard our_k_state = gamestate.state.pieces[us][KING];
 
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
@@ -129,11 +129,11 @@ public:
     {
         BoardState state = gamestate.state;
 
-        float p_score = 100 * (std::popcount(state.wPawn) - std::popcount(state.bPawn));
-        float n_score = 300 * (std::popcount(state.wKnight) - std::popcount(state.bKnight));
-        float b_score = 320 * (std::popcount(state.wBishop) - std::popcount(state.bBishop));
-        float r_score = 500 * (std::popcount(state.wRook) - std::popcount(state.bRook));
-        float q_score = 900 * (std::popcount(state.wQueen) - std::popcount(state.bQueen));
+        float p_score = 100 * (std::popcount(state.pieces[WHITE][PAWN]) - std::popcount(state.pieces[BLACK][PAWN]));
+        float n_score = 300 * (std::popcount(state.pieces[WHITE][KNIGHT]) - std::popcount(state.pieces[BLACK][KNIGHT]));
+        float b_score = 320 * (std::popcount(state.pieces[WHITE][BISHOP]) - std::popcount(state.pieces[BLACK][BISHOP]));
+        float r_score = 500 * (std::popcount(state.pieces[WHITE][ROOK]) - std::popcount(state.pieces[BLACK][ROOK]));
+        float q_score = 900 * (std::popcount(state.pieces[WHITE][QUEEN]) - std::popcount(state.pieces[BLACK][QUEEN]));
 
         return (p_score + n_score + b_score + r_score + q_score) / 1000;
     }
@@ -141,7 +141,7 @@ public:
     unsigned long long perft(int depth)
     {
         unsigned long long node_count = 0;
-        
+
         Bitboard occ = gamestate.getFullState();
         Bitboard empty = ~occ;
 
@@ -151,12 +151,12 @@ public:
         Bitboard our_state = gamestate.getSideState(us);
         Bitboard their_state = gamestate.getSideState(them);
 
-        Bitboard our_p_state = (us == WHITE) ? gamestate.state.wPawn : gamestate.state.bPawn;
-        Bitboard our_n_state = (us == WHITE) ? gamestate.state.wKnight : gamestate.state.bKnight;
-        Bitboard our_b_state = (us == WHITE) ? gamestate.state.wBishop : gamestate.state.bBishop;
-        Bitboard our_r_state = (us == WHITE) ? gamestate.state.wRook : gamestate.state.bRook;
-        Bitboard our_q_state = (us == WHITE) ? gamestate.state.wQueen : gamestate.state.bQueen;
-        Bitboard our_k_state = (us == WHITE) ? gamestate.state.wKing : gamestate.state.bKing;
+        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
+        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
+        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
+        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
+        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
+        Bitboard our_k_state = gamestate.state.pieces[us][KING];
 
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;

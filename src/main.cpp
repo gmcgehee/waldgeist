@@ -17,9 +17,17 @@ int main()
 
     Engine *engine = new Engine();
 
-    engine->gamestate.loadFromFen("qqqqqqqq/qqqqqqqq/qqqqqqqq/qqqqqqqq/qqqqqqqq/qqqqqqqq/qqqqqqqq/qqqqKqqq w - - 0 1");
+    GameState *gamestate = &engine->gamestate;
 
-    std::cout << engine->eval(engine->gamestate.state) << std::endl;
+    gamestate->loadDefaultBoard();
+    gamestate->getPieceAt(c2);
+    gamestate->unsetPieceAt(c2);
+    std::cout << getPrintableBoardState(gamestate->state) << std::endl;
+    gamestate->getPieceAt(c2);
+
+
+
+    std::cout << engine->eval() << std::endl;
 
     return 0;
 }

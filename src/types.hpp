@@ -17,7 +17,7 @@ enum SpecialMoveFlag : int {
 };
 
 enum PieceType : int {
-    EMPTY = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6
+    EMPTY = -1, PAWN = 0, KNIGHT = 1, BISHOP = 2, ROOK = 3, QUEEN = 4, KING = 5
 };
 
 // enum PromotionPiece : int {
@@ -38,8 +38,10 @@ enum BoardSquares : Square {
 struct Piece {
     PieceType piece_type;
     Side color;
+    Bitboard *piece_bb;
 };
 
+/*
 struct BoardState
 {
 
@@ -67,4 +69,23 @@ struct BoardState
 
     Side sideToPlay = Side::WHITE;
 };
+*/
 
+struct BoardState
+{
+
+    Bitboard pieces[2][6] = {
+     {0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL}, // white: pawn, knight, bishop, rook, queen, king 
+     {0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL}
+    };
+
+    u8 castlingRights = 0U; // 0000 - KQkq
+
+    Square enPassantSquare = 0U; 
+
+    u8 halfMoves = 0U;
+
+    uint16_t fullMoves = 0U;
+
+    Side sideToPlay = Side::WHITE;
+};

@@ -75,6 +75,11 @@ inline void set_bit(Bitboard &bb, Square sq) // reference to bitboard because we
     get_bit(bb, sq) ? 0 : bb ^= (1ULL << sq);
 }
 
+inline void unset_bit(Bitboard &bb, Square sq)
+{
+    get_bit(bb, sq) ? bb ^= (1ULL << sq) : 0;
+}
+
 inline Square pop_lsb(Bitboard &bb)
 {
     Square index = __builtin_ctzll(bb);
@@ -147,34 +152,35 @@ std::string indexToSquare(int index)
     return square;
 }
 
-std::string getPieceOnSquare(BoardState state, Square sq)
+// replaced by getPieceAt with mailbox
+std::string ____getPieceOnSquare(BoardState state, Square sq)
 {
     // wouldn't it be better to return the PIECE type? like Piece::PAWN? How would we account for color?
     Bitboard mask = 1ULL << sq;
 
-    if (state.wPawn & mask)
+    if (state.pieces[WHITE][PAWN] & mask)
         return "P";
-    else if (state.wKnight & mask)
+    else if (state.pieces[WHITE][KNIGHT] & mask)
         return "N";
-    else if (state.wBishop & mask)
+    else if (state.pieces[WHITE][BISHOP] & mask)
         return "B";
-    else if (state.wRook & mask)
+    else if (state.pieces[WHITE][ROOK] & mask)
         return "R";
-    else if (state.wQueen & mask)
+    else if (state.pieces[WHITE][QUEEN] & mask)
         return "Q";
-    else if (state.wKing & mask)
+    else if (state.pieces[WHITE][KING] & mask)
         return "K";
-    else if (state.bPawn & mask)
+    else if (state.pieces[BLACK][PAWN] & mask)
         return "p";
-    else if (state.bKnight & mask)
+    else if (state.pieces[BLACK][KNIGHT] & mask)
         return "n";
-    else if (state.bBishop & mask)
+    else if (state.pieces[BLACK][BISHOP] & mask)
         return "b";
-    else if (state.bRook & mask)
+    else if (state.pieces[BLACK][ROOK] & mask)
         return "r";
-    else if (state.bQueen & mask)
+    else if (state.pieces[BLACK][QUEEN] & mask)
         return "q";
-    else if (state.bKing & mask)
+    else if (state.pieces[BLACK][KING] & mask)
         return "k";
     else
         return "";
@@ -182,8 +188,14 @@ std::string getPieceOnSquare(BoardState state, Square sq)
 
 std::string exportFen(BoardState state)
 {
-    Bitboard blackBoard = state.bBishop | state.bKnight | state.bPawn | state.bQueen | state.bRook | state.bKing;
-    Bitboard whiteBoard = state.wBishop | state.wKnight | state.wPawn | state.wQueen | state.wRook | state.wKing;
+    Bitboard blackBoard = 0ULL;
+    Bitboard whiteBoard = 0ULL;
+
+    for (int pt = 0; pt < 6; ++pt)
+    {
+        whiteBoard |= state.pieces[WHITE][pt];
+        blackBoard |= state.pieces[BLACK][pt];
+    }
     Bitboard fullBoard = blackBoard | whiteBoard;
 
     std::string fen = "";
@@ -219,7 +231,7 @@ std::string exportFen(BoardState state)
                     blankCount = 0;
                 }
 
-                toAppend = getPieceOnSquare(state, index);
+                toAppend = ____getPieceOnSquare(state, index);
                 fen.append(toAppend);
             }
             else
@@ -326,192 +338,179 @@ std::string getPrintableBoardState(BoardState state)
 }
 
 BoardState loadFromFen(std::string const fen)
+{
+    // NOTE: Move this to GameState class
+
+    // White pieces are uppercase, black are lowercase
+    // Empty space is denoted with a number 1-8
+    // Sample FEN: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
+    //             where each piece is                       _ to play _ castling rights _ en passant square _ halfmove counter _ fullmove counter
+
+    BoardState board;
+
+    u8 curr_row = 7;  // row 8
+    u8 curr_file = 0; // file a
+
+    u8 fieldnumber = 0;
+
+    for (int i = 0; i < fen.length(); i++)
     {
-        // NOTE: Move this to GameState class
 
-        // White pieces are uppercase, black are lowercase
-        // Empty space is denoted with a number 1-8
-        // Sample FEN: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
-        //             where each piece is                       _ to play _ castling rights _ en passant square _ halfmove counter _ fullmove counter
+        char c = fen[i];
 
-        BoardState board;
-
-        u8 curr_row = 7;  // row 8
-        u8 curr_file = 0; // file a
-
-        u8 fieldnumber = 0;
-
-        for (int i = 0; i < fen.length(); i++)
+        if (c == ' ')
         {
-
-            char c = fen[i];
-
-            if (c == ' ')
-            {
-                fieldnumber += 1;
-                continue;
-            }
-
-            if (fieldnumber == 0)
-            {
-                if (std::isdigit(static_cast<unsigned char>(c)))
-                {
-                    curr_file += c - '0'; // was that it
-                }
-
-                else if (c == '/')
-                {
-
-                    curr_row -= 1;
-                    curr_file = 0;
-                }
-
-                else if (std::isalpha(c))
-                {
-
-                    // is this the most efficient/best practice way to do this? row 0 file 0 is lshift 63
-                    u8 shamt = (8 * curr_row + curr_file); // the first piece, at a8, is lshamt 56
-
-                    Bitboard *piecetype_to_modify = nullptr;
-
-                    switch (c)
-                    {
-                    case 'r':
-                        piecetype_to_modify = &board.bRook;
-                        break;
-                    case 'n':
-                        piecetype_to_modify = &board.bKnight;
-                        break;
-                    case 'b':
-                        piecetype_to_modify = &board.bBishop;
-                        break;
-                    case 'q':
-                        piecetype_to_modify = &board.bQueen;
-                        break;
-                    case 'k':
-                        piecetype_to_modify = &board.bKing;
-                        break;
-                    case 'p':
-                        piecetype_to_modify = &board.bPawn;
-                        break;
-                    case 'R':
-                        piecetype_to_modify = &board.wRook;
-                        break;
-                    case 'N':
-                        piecetype_to_modify = &board.wKnight;
-                        break;
-                    case 'B':
-                        piecetype_to_modify = &board.wBishop;
-                        break;
-                    case 'Q':
-                        piecetype_to_modify = &board.wQueen;
-                        break;
-                    case 'K':
-                        piecetype_to_modify = &board.wKing;
-                        break;
-                    case 'P':
-                        piecetype_to_modify = &board.wPawn;
-                        break;
-                    default:
-                        std::cout << "C: " << c << std::endl;
-                        throw std::invalid_argument("Unexpected value in FEN field 'pieces'.");
-                        break;
-                    }
-
-                    *piecetype_to_modify |= (1ULL << shamt);
-                    curr_file += 1;
-                }
-            }
-            else if (fieldnumber == 1)
-            {
-
-                if (c == 'b')
-                {
-                    board.sideToPlay = Side::BLACK;
-                }
-                else if (c == 'w')
-                {
-                    board.sideToPlay = Side::WHITE;
-                }
-                else
-                {
-                    std::cout << "C: " << c << std::endl;
-                    throw std::invalid_argument("Unexpected value in FEN field 'side to play'.");
-                }
-
-                continue;
-            }
-            else if (fieldnumber == 2)
-            {
-                // right nibble keeps track of castling rights (white kingside, white queenside, black kingside, black queenside)
-
-                if (c == 'K')
-                {
-                    board.castlingRights |= (1 << 3); // is the speed difference worthwhile? should I precompute these values? it would look less readable.
-                }
-                else if (c == 'Q')
-                {
-                    board.castlingRights |= (1 << 2);
-                }
-                else if (c == 'k')
-                {
-                    board.castlingRights |= (1 << 1);
-                }
-                else if (c == 'q')
-                {
-                    board.castlingRights |= 1;
-                }
-                else if (c == '-')
-                {
-                    board.castlingRights = 128;
-                }
-                else
-                {
-                    std::cout << "C: " << c << std::endl;
-                    throw std::invalid_argument("Unexpected value in FEN field 'castling rights'.");
-                }
-            }
-            else if (fieldnumber == 3)
-            {
-
-                if (c == '-')
-                {
-                    board.enPassantSquare = 128; // TEMPORARY: if there is no en passant square, have some number too big to be on the board
-                    continue;
-                }
-
-                else if (std::isalpha(c))
-                {
-                    std::string square;
-                    square += c;
-                    square += fen[i + 1]; // the cleanest way to add two chars to a string
-                    int index = squareToIndex(square);
-
-                    board.enPassantSquare = index; // this will be 63 if the square is a8 and 0 if it is h1
-                }
-            }
-            else if (fieldnumber == 4)
-            {
-                if (fen[i + 1] == ' ')
-                {
-                    board.halfMoves = c - '0'; // again, this converts c to an int
-                }
-                else
-                {
-                    std::string halfMoveCounter;
-                    halfMoveCounter += c;
-                    halfMoveCounter += fen[i + 1];
-                    board.halfMoves = std::stoi(halfMoveCounter);
-                    i++; // necessary to make it skip
-                }
-            }
-            else if (fieldnumber == 5)
-            {
-                std::string fullMoveCounter = fen.substr(i, fen.length() - i);
-                board.fullMoves = std::stoi(fullMoveCounter);
-                break;
-            }
+            fieldnumber += 1;
+            continue;
         }
 
-        return board;
+        if (fieldnumber == 0)
+        {
+            if (std::isdigit(static_cast<unsigned char>(c)))
+            {
+                curr_file += c - '0'; // was that it
+            }
+
+            else if (c == '/')
+            {
+
+                curr_row -= 1;
+                curr_file = 0;
+            }
+
+            else if (std::isalpha(c))
+            {
+
+                // is this the most efficient/best practice way to do this? row 0 file 0 is lshift 63
+                u8 shamt = (8 * curr_row + curr_file); // the first piece, at a8, is lshamt 56
+
+                Bitboard *piecetype_to_modify = nullptr;
+
+                Side color;
+                PieceType pieceType;
+
+                switch (std::tolower(static_cast<unsigned char>(c)))
+                {
+                case 'p':
+                    pieceType = PAWN;
+                    break;
+                case 'n':
+                    pieceType = KNIGHT;
+                    break;
+                case 'b':
+                    pieceType = BISHOP;
+                    break;
+                case 'r':
+                    pieceType = ROOK;
+                    break;
+                case 'q':
+                    pieceType = QUEEN;
+                    break;
+                case 'k':
+                    pieceType = KING;
+                    break;
+                default:
+                    std::cout << "C: " << c << std::endl;
+                    throw std::invalid_argument("Unexpected value in FEN field 'pieces'.");
+                }
+
+                color = std::islower(static_cast<unsigned char>(c)) ? BLACK : WHITE;
+                piecetype_to_modify = &board.pieces[color][pieceType];
+
+                *piecetype_to_modify |= (1ULL << shamt);
+                curr_file += 1;
+            }
+        }
+        else if (fieldnumber == 1)
+        {
+
+            if (c == 'b')
+            {
+                board.sideToPlay = Side::BLACK;
+            }
+            else if (c == 'w')
+            {
+                board.sideToPlay = Side::WHITE;
+            }
+            else
+            {
+                std::cout << "C: " << c << std::endl;
+                throw std::invalid_argument("Unexpected value in FEN field 'side to play'.");
+            }
+
+            continue;
+        }
+        else if (fieldnumber == 2)
+        {
+            // right nibble keeps track of castling rights (white kingside, white queenside, black kingside, black queenside)
+
+            if (c == 'K')
+            {
+                board.castlingRights |= (1 << 3); // is the speed difference worthwhile? should I precompute these values? it would look less readable.
+            }
+            else if (c == 'Q')
+            {
+                board.castlingRights |= (1 << 2);
+            }
+            else if (c == 'k')
+            {
+                board.castlingRights |= (1 << 1);
+            }
+            else if (c == 'q')
+            {
+                board.castlingRights |= 1;
+            }
+            else if (c == '-')
+            {
+                board.castlingRights = 128;
+            }
+            else
+            {
+                std::cout << "C: " << c << std::endl;
+                throw std::invalid_argument("Unexpected value in FEN field 'castling rights'.");
+            }
+        }
+        else if (fieldnumber == 3)
+        {
+
+            if (c == '-')
+            {
+                board.enPassantSquare = 128; // TEMPORARY: if there is no en passant square, have some number too big to be on the board
+                continue;
+            }
+
+            else if (std::isalpha(c))
+            {
+                std::string square;
+                square += c;
+                square += fen[i + 1]; // the cleanest way to add two chars to a string
+                int index = squareToIndex(square);
+
+                board.enPassantSquare = index; // this will be 63 if the square is a8 and 0 if it is h1
+            }
+        }
+        else if (fieldnumber == 4)
+        {
+            if (fen[i + 1] == ' ')
+            {
+                board.halfMoves = c - '0'; // again, this converts c to an int
+            }
+            else
+            {
+                std::string halfMoveCounter;
+                halfMoveCounter += c;
+                halfMoveCounter += fen[i + 1];
+                board.halfMoves = std::stoi(halfMoveCounter);
+                i++; // necessary to make it skip
+            }
+        }
+        else if (fieldnumber == 5)
+        {
+            std::string fullMoveCounter = fen.substr(i, fen.length() - i);
+            board.fullMoves = std::stoi(fullMoveCounter);
+            break;
+        }
     }
+
+    return board;
+}

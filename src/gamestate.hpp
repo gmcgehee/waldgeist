@@ -11,7 +11,7 @@ class GameState
 
 public:
     BoardState state;
-    std::array<Piece, 64> mailbox;
+    std::array<Piece, 64> mailbox{};
     std::set<Square> attacked_squares;
 
     GameState(std::string fen = "")
@@ -31,19 +31,13 @@ public:
     // GPT generated
     void resetBoardState()
     {
-        state.wPawn = 0ULL;
-        state.wKnight = 0ULL;
-        state.wBishop = 0ULL;
-        state.wRook = 0ULL;
-        state.wQueen = 0ULL;
-        state.wKing = 0ULL;
-
-        state.bPawn = 0ULL;
-        state.bKnight = 0ULL;
-        state.bBishop = 0ULL;
-        state.bRook = 0ULL;
-        state.bQueen = 0ULL;
-        state.bKing = 0ULL;
+        for (int side = 0; side < 2; ++side)
+        {
+            for (int pt = 0; pt < 6; ++pt)
+            {
+                state.pieces[side][pt] = 0ULL;
+            }
+        }
 
         state.castlingRights = 0U;
         state.enPassantSquare = 0U;
@@ -95,70 +89,40 @@ public:
                     curr_file = 0;
                 }
 
-                else if (std::isalpha(c))
+                else if (std::isalpha(static_cast<unsigned char>(c)))
                 {
+                    Square sq = (8 * curr_row + curr_file);
 
-                    // is this the most efficient/best practice way to do this?
-                    Square sq = (8 * curr_row + curr_file); // the first piece, at a8, is lshamt 56
+                    Side side = std::islower(static_cast<unsigned char>(c)) ? BLACK : WHITE;
+                    PieceType pieceType;
 
-                    Bitboard *piecetype_to_modify = nullptr;
-
-                    switch (c)
+                    switch (std::tolower(static_cast<unsigned char>(c)))
                     {
-                    case 'r':
-                        piecetype_to_modify = &state.bRook;
-                        mailbox[sq] = Piece{PieceType::ROOK, Side::BLACK};
+                    case 'p':
+                        pieceType = PAWN;
                         break;
                     case 'n':
-                        piecetype_to_modify = &state.bKnight;
-                        mailbox[sq] = Piece{PieceType::KNIGHT, Side::BLACK};
-
+                        pieceType = KNIGHT;
                         break;
                     case 'b':
-                        piecetype_to_modify = &state.bBishop;
-                        mailbox[sq] = Piece{PieceType::BISHOP, Side::BLACK};
+                        pieceType = BISHOP;
+                        break;
+                    case 'r':
+                        pieceType = ROOK;
                         break;
                     case 'q':
-                        piecetype_to_modify = &state.bQueen;
-                        mailbox[sq] = Piece{PieceType::QUEEN, Side::BLACK};
+                        pieceType = QUEEN;
                         break;
                     case 'k':
-                        piecetype_to_modify = &state.bKing;
-                        mailbox[sq] = Piece{PieceType::KING, Side::BLACK};
-                        break;
-                    case 'p':
-                        piecetype_to_modify = &state.bPawn;
-                        mailbox[sq] = Piece{PieceType::PAWN, Side::BLACK};
-                        break;
-                    case 'R':
-                        piecetype_to_modify = &state.wRook;
-                        mailbox[sq] = Piece{PieceType::ROOK, Side::WHITE};
-                        break;
-                    case 'N':
-                        piecetype_to_modify = &state.wKnight;
-                        mailbox[sq] = Piece{PieceType::KNIGHT, Side::WHITE};
-                        break;
-                    case 'B':
-                        piecetype_to_modify = &state.wBishop;
-                        mailbox[sq] = Piece{PieceType::BISHOP, Side::WHITE};
-                        break;
-                    case 'Q':
-                        piecetype_to_modify = &state.wQueen;
-                        mailbox[sq] = Piece{PieceType::QUEEN, Side::WHITE};
-                        break;
-                    case 'K':
-                        piecetype_to_modify = &state.wKing;
-                        mailbox[sq] = Piece{PieceType::KING, Side::WHITE};
-                        break;
-                    case 'P':
-                        piecetype_to_modify = &state.wPawn;
-                        mailbox[sq] = Piece{PieceType::PAWN, Side::WHITE};
+                        pieceType = KING;
                         break;
                     default:
                         std::cout << "C: " << c << std::endl;
                         throw std::invalid_argument("Unexpected value in FEN field 'pieces'.");
-                        break;
                     }
+
+                    Bitboard *piecetype_to_modify = &state.pieces[side][pieceType];
+                    mailbox[sq] = Piece{pieceType, side, piecetype_to_modify};
 
                     *piecetype_to_modify |= (1ULL << sq);
                     curr_file += 1;
@@ -258,14 +222,14 @@ public:
 
     Bitboard getSideState(Side side)
     {
-        if (side == BLACK)
+        Bitboard result = 0ULL;
+
+        for (int pt = 0; pt < 6; ++pt)
         {
-            return state.bPawn | state.bKnight | state.bBishop | state.bRook | state.bQueen | state.bKing;
+            result |= state.pieces[side][pt];
         }
-        else
-        { // (side == WHITE)
-            return state.wPawn | state.wKnight | state.wBishop | state.wRook | state.wQueen | state.wKing;
-        }
+
+        return result;
     }
 
     Bitboard getFullState()
@@ -273,9 +237,22 @@ public:
         return getSideState(BLACK) & getSideState(WHITE);
     }
 
-    Piece getPieceAt(Square square)
+    inline Piece getPieceAt(Square square)
     {
         return mailbox[square];
+    }
+
+    inline void setPieceAt(Square square, Piece piece)
+    {
+        mailbox[square] = piece;
+        *piece.piece_bb |= 1ULL << square;
+    }
+
+    inline void unsetPieceAt(Square square)
+    {
+        Piece piece = getPieceAt(square);
+        mailbox[square] = Piece{EMPTY, WHITE, NULL};
+        unset_bit(*piece.piece_bb, square);
     }
 
     bool isSquareThreatened(Square square)
@@ -309,7 +286,28 @@ public:
         Piece piece_on_origin = getPieceAt(origin);
         Piece piece_on_destination = getPieceAt(destination);
 
-        
+        unsetPieceAt(origin); // is this always done? I believe so...
+
+        if (flag == NONSPECIAL)
+        {
+            setPieceAt(destination, piece_on_origin);
+        }
+        else if (flag == PROMOTION)
+        {
+
+            switch (promotion_piece)
+            {
+            case QUEEN:
+                // setPieceAt(destination, ) break;
+            case KNIGHT:
+                break;
+            case BISHOP:
+                break;
+
+            default:
+                break;
+            }
+        }
     }
 
     void unmake(Move move)

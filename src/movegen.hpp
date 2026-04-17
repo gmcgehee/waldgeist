@@ -15,7 +15,7 @@
 namespace MoveGeneration
 {
 
-    inline Move convertToMove(Square destination, Square origin, PromotionPiece promotion_piece = TO_NONE, SpecialMoveFlag flag = NONSPECIAL)
+    inline Move convertToMove(Square destination, Square origin, PieceType promotion_piece = EMPTY, SpecialMoveFlag flag = NONSPECIAL)
     {
 
         // From official Stockfish code:
@@ -130,7 +130,7 @@ namespace MoveGeneration
             while (two_push)
             {
                 square = pop_lsb(two_push);
-                move = convertToMove(square, square - 16, TO_NONE, EN_PASSANT);
+                move = convertToMove(square, square - 16, EMPTY, EN_PASSANT);
                 move_list.push_back(move);
             }
         }
@@ -152,7 +152,7 @@ namespace MoveGeneration
             while (two_push)
             {
                 square = pop_lsb(two_push);
-                move = convertToMove(square, square + 16, TO_NONE, EN_PASSANT);
+                move = convertToMove(square, square + 16, EMPTY, EN_PASSANT);
                 move_list.push_back(move);
             }
         }
