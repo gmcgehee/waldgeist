@@ -65,9 +65,9 @@ public:
 
         Move curr_move;
 
-        gamestate.make(curr_move);
+        Undo undo = gamestate.make(curr_move);
         curr_move = search(depth - 1); // may need to be 'max(curr_best, search())'
-        gamestate.unmake(curr_move);
+        gamestate.unmake(curr_move, undo);
 
         return curr_move;
     }
@@ -119,9 +119,9 @@ public:
 
         for (Move curr_move : captures)
         {
-            gamestate.make(curr_move);
+            Undo undo = gamestate.make(curr_move);
             float score = quiesce(); // may need to be 'max(curr_best, search())'
-            gamestate.unmake(curr_move);
+            gamestate.unmake(curr_move, undo);
         }
     }
 
@@ -182,9 +182,9 @@ public:
 
         for (Move curr_move : move_list)
         {
-            gamestate.make(curr_move);
+            Undo undo = gamestate.make(curr_move);
             node_count += perft(depth - 1); // may need to be 'max(curr_best, search())'
-            gamestate.unmake(curr_move);
+            gamestate.unmake(curr_move, undo);
         }
     }
 };

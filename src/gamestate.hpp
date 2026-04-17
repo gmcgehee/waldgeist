@@ -264,6 +264,8 @@ public:
 
     bool isSquareThreatened(Square square)
     {
+        // how am I even going to do this?
+        return false;
     }
 
     /// @brief  Moves one piece
@@ -364,22 +366,23 @@ public:
              1. determine black/white
              2. determine kingside/queenside
             */
-
-            Square king_square = pop_lsb(state.pieces[us][KING]);
-
-            int direction = us == WHITE ? -1 : 1;
-            switch (destination - origin)
             {
-            case 2: // if the king is moving two to the left, e.g. queenside
-                if (isSquareThreatened(king_square) or isSquareThreatened(king_square - 1) or isSquareThreatened(king_square - 2))
-                    unmake(move, undo);
-                break;
-            case -2: // if the king is moving two to the right, e.g. kingside
-                if (isSquareThreatened(king_square) or isSquareThreatened(king_square + 1) or isSquareThreatened(king_square + 2))
-                    unmake(move, undo);
-                break;
-            default:
-                break;
+                Square king_square = pop_lsb(state.pieces[us][KING]);
+
+                int direction = us == WHITE ? -1 : 1;
+                switch (destination - origin)
+                {
+                case 2: // if the king is moving two to the left, e.g. queenside
+                    if (isSquareThreatened(king_square) or isSquareThreatened(king_square - 1) or isSquareThreatened(king_square - 2))
+                        unmake(move, undo);
+                    break;
+                case -2: // if the king is moving two to the right, e.g. kingside
+                    if (isSquareThreatened(king_square) or isSquareThreatened(king_square + 1) or isSquareThreatened(king_square + 2))
+                        unmake(move, undo);
+                    break;
+                default:
+                    break;
+                }
             }
             break;
         default:
