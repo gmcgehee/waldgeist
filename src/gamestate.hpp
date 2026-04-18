@@ -298,7 +298,10 @@ public:
         // Get pieces at squares in order to determine captures
         Piece piece_on_origin = getPieceAt(origin);
         if (piece_on_origin.piece_type == EMPTY)
+        {
+            std::cout << getPrintableBoardState(state) << std::endl;
             throw "`make()` attempted to move empty piece square.";
+        }
         Side us = piece_on_origin.color;
 
         Piece piece_on_destination = getPieceAt(destination);
@@ -373,7 +376,7 @@ public:
              2. determine kingside/queenside
             */
             {
-                Square king_square = pop_lsb(state.pieces[us][KING]);
+                Square king_square = __builtin_ctzll(state.pieces[us][KING]);
 
                 int direction = us == WHITE ? -1 : 1;
                 switch (destination - origin)
@@ -395,7 +398,7 @@ public:
             break;
         }
 
-        if (isSquareThreatened(pop_lsb(state.pieces[us][KING])))
+        if (isSquareThreatened(__builtin_ctzll(state.pieces[us][KING])))
         {
             unmake(move, undo);
         }
