@@ -74,6 +74,8 @@ public:
 
     Move minimax(int depth = 1)
     {
+        Move move = 0;
+        return move;
     }
 
     float quiesce()
