@@ -289,12 +289,10 @@ public:
 
         */
 
-        Undo undo;
-
         // DECONSTRUCT THE MOVE
         Square destination = move & 0x3F;
         Square origin = (move >> 6) & 0x3F;
-        u8 promotion_piece = ((move >> 12) & 0x3); // adds 2 because 0 means knight, but in the enum it means empty
+        u8 promotion_piece = ((move >> 12) & 0x3) + 1; // adds 1 because 0 means knight, but in the enum it means pawn
         u8 flag = (move >> 14);
 
         // Get pieces at squares in order to determine captures
@@ -304,6 +302,14 @@ public:
         Side us = piece_on_origin.color;
 
         Piece piece_on_destination = getPieceAt(destination);
+
+        Undo undo = {
+            move,                  // Move move;
+            piece_on_destination,  // Piece captured;
+            state.enPassantSquare, // Square en_passant_square;
+            state.castlingRights,  // u8 castling_rights;
+            state.halfMoves        // u8 halfmoves;
+        };
 
         // Modify non-piece BoardState elements
 
@@ -399,5 +405,79 @@ public:
 
     void unmake(Move move, Undo undo)
     {
+        // I somehow need to check if the king will continue to be in check after making a move, but without making the move
+
+        /*
+
+            What to account for:
+             - castling rights changes
+             - piece moving
+             - en passant square
+             - counters (halfmove, fullmove)
+             - side to play
+            In other words, keep everything in the gamestate
+
+            Update both the mailbox and the bitboards!
+
+        */
+
+        // DECONSTRUCT THE MOVE
+        // origin and destination are swapped
+        Square origin = move & 0x3F;
+        Square destination = (move >> 6) & 0x3F;
+        u8 promotion_piece = ((move >> 12) & 0x3); // adds 2 because 0 means knight, but in the enum it means empty
+        u8 flag = (move >> 14);
+
+        // Get pieces at squares in order to determine captures
+        Piece piece_on_origin = getPieceAt(origin);
+        if (piece_on_origin.piece_type == EMPTY)
+            throw "`unmake()` attempted to move empty piece square.";
+        Side us = piece_on_origin.color;
+        Side them = us == WHITE ? BLACK : WHITE;
+
+        // ALWAYS DONE
+        unsetPieceAt(origin);
+
+        if (origin == undo.en_passant_square)
+        {
+            int direction = us == WHITE ? -1 : 1;
+            setPieceAt(origin + 8 * direction, Piece{PAWN, them, &state.pieces[them][PAWN]});
+            setPieceAt(destination, piece_on_origin);
+        }
+
+        state.enPassantSquare = undo.en_passant_square;
+
+        // Modify the game state in a unique manner in special circumstances
+        switch (flag)
+        {
+        case NONSPECIAL:
+            setPieceAt(destination, piece_on_origin);
+            break;
+        case PROMOTION:
+            setPieceAt(destination, Piece{PAWN, us, &state.pieces[us][PAWN]});
+            break;
+        case EN_PASSANT: // this is if en passant can be performed, not if en_passant just happened
+        {
+            // do nothing?
+            break;
+        }
+        break;
+        case CASTLING:
+            // needs logic to test if the squares in-between are in check and remove castling rights
+            /*
+             Steps:
+             1. determine black/white
+             2. determine kingside/queenside
+            */
+            {
+                Square king_square = pop_lsb(state.pieces[us][KING]);
+
+                int direction = us == WHITE ? -1 : 1;
+            }
+
+            break;
+        default:
+            break;
+        }
     }
 };

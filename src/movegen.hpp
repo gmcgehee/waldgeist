@@ -159,6 +159,16 @@ namespace MoveGeneration
             while (one_push)
             {
                 square = pop_lsb(one_push);
+
+                if (square >= h8)
+                {
+                    for (int piece = 0; piece < KING - 1; piece++)
+                    {
+                        Move move = convertToMove(square, square - 8, (PieceType)piece, PROMOTION);
+                        move_list.push_back(move);
+                    }
+                    break;
+                }
                 move = convertToMove(square, square - 8);
                 move_list.push_back(move);
             }
@@ -181,6 +191,17 @@ namespace MoveGeneration
             while (one_push)
             {
                 square = pop_lsb(one_push);
+
+                if (square <= h1)
+                {
+                    for (int piece = 0; piece < KING - 1; piece++)
+                    {
+                        Move move = convertToMove(square, square - 8, (PieceType)piece, PROMOTION);
+                        move_list.push_back(move);
+                    }
+                    break;
+                }
+
                 move = convertToMove(square, square + 8);
                 move_list.push_back(move);
             }
