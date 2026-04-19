@@ -122,8 +122,7 @@ public:
             our_k_state,
             castling_rights,
             en_passant_square,
-            capture_list
-        );
+            capture_list);
 
         if (capture_list.count == 0)
         {
@@ -217,39 +216,39 @@ public:
                 gamestate.unmake(move_list.moves[i], undo);
             }
 
-            // Temporary for debug
-            {
-                for (int i = 0; i < KING + 1; i++)
-                {
-                    if (old_state.pieces[0][i] != gamestate.state.pieces[0][i])
-                        throw "white pieces didn't restore properly";
-                }
+            // Temporary for debug DEFINITELY SLOWS THINGS DOWN
+            // {
+            //     for (int i = 0; i < KING + 1; i++)
+            //     {
+            //         if (old_state.pieces[0][i] != gamestate.state.pieces[0][i])
+            //             throw "white pieces didn't restore properly";
+            //     }
 
-                for (int i = 0; i < KING + 1; i++)
-                {
-                    if (old_state.pieces[1][i] != gamestate.state.pieces[1][i])
-                        throw "Black pieces didn't restore properly";
-                }
+            //     for (int i = 0; i < KING + 1; i++)
+            //     {
+            //         if (old_state.pieces[1][i] != gamestate.state.pieces[1][i])
+            //             throw "Black pieces didn't restore properly";
+            //     }
 
-                if (old_state.castlingRights != gamestate.state.castlingRights)
-                    throw "castling rights didn't restore properly";
-                if (old_state.fullMoves != gamestate.state.fullMoves)
-                    throw "fullMoves didn't restore properly";
-                if (old_state.halfMoves != gamestate.state.halfMoves)
-                    throw "halfMoves didn't restore properly";
-                if (old_state.sideToPlay != gamestate.state.sideToPlay)
-                    throw "sideToPlay didn't restore properly";
-                if (old_state.enPassantSquare != gamestate.state.enPassantSquare)
-                    throw "en passant square didn't restore properly";
+            //     if (old_state.castlingRights != gamestate.state.castlingRights)
+            //         throw "castling rights didn't restore properly";
+            //     if (old_state.fullMoves != gamestate.state.fullMoves)
+            //         throw "fullMoves didn't restore properly";
+            //     if (old_state.halfMoves != gamestate.state.halfMoves)
+            //         throw "halfMoves didn't restore properly";
+            //     if (old_state.sideToPlay != gamestate.state.sideToPlay)
+            //         throw "sideToPlay didn't restore properly";
+            //     if (old_state.enPassantSquare != gamestate.state.enPassantSquare)
+            //         throw "en passant square didn't restore properly";
 
-                for (int i = 0; i < 64; i++)
-                {
-                    if (gamestate.mailbox[i].piece_type != old_mailbox[i].piece_type)
-                    {
-                        throw "mailbox didn't restore properly";
-                    }
-                }
-            }
+            //     for (int i = 0; i < 64; i++)
+            //     {
+            //         if (gamestate.mailbox[i].piece_type != old_mailbox[i].piece_type)
+            //         {
+            //             throw "mailbox didn't restore properly";
+            //         }
+            //   }
+            //}
         }
 
         return node_count;
