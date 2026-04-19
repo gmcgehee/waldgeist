@@ -34,7 +34,7 @@ int main()
     // std::cout << '\n' << getPrintableBoardState(gamestate->state) << '\n';
     // return 0;
 
-    int perft_depth = 5;
+    int perft_depth = 7;
     auto start = std::chrono::steady_clock::now();
 
     unsigned long long node_count = 0;

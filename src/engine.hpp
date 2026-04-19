@@ -158,6 +158,7 @@ public:
     {
 
         unsigned long long node_count = 0;
+        int depth_0_count = 0;
 
         Bitboard occ = gamestate.getFullState();
         Bitboard empty = ~occ;
@@ -195,33 +196,43 @@ public:
             en_passant_square,
             move_list);
 
-        // if (depth == 0)
-        //     return 1ULL;
+        if (depth == 0)
+            return 1;
 
         if (depth == 1)
-            return move_list.count;
-
-        if (move_list.count == 0)
         {
-            return 0; // or however you represent "no move"
+            for (int i = 0; i < move_list.count; i++)
+            {
+
+                const Move current_move = move_list.moves[i];
+
+                Undo undo;
+
+                if (gamestate.make(current_move, undo))
+                {
+                    node_count++;
+                    gamestate.unmake(current_move, undo);
+                }
+
+            }
+            return node_count;
         }
 
         for (int i = 0; i < move_list.count; i++)
         {
-            BoardState old_state = gamestate.state;
-            Mailbox old_mailbox = gamestate.mailbox;
+            // BoardState old_state = gamestate.state;
+            // Mailbox old_mailbox = gamestate.mailbox;
+            const Move current_move = move_list.moves[i];
 
             Undo undo;
 
-            if (gamestate.make(move_list.moves[i], undo))
+            if (gamestate.make(current_move, undo))
             {
                 node_count += perft(depth - 1);
-                gamestate.unmake(move_list.moves[i], undo);
+                gamestate.unmake(current_move, undo);
             }
 
-            check_for_disparities(old_state, gamestate.state, old_mailbox, gamestate.mailbox);
-
-           
+            // check_for_disparities(old_state, gamestate.state, old_mailbox, gamestate.mailbox);
         }
 
         return node_count;
