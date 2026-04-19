@@ -195,8 +195,11 @@ public:
             en_passant_square,
             move_list);
 
-        if (depth == 0)
-            return 1ULL;
+        // if (depth == 0)
+        //     return 1ULL;
+
+        if (depth == 1)
+            return move_list.count;
 
         if (move_list.count == 0)
         {

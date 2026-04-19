@@ -21,8 +21,8 @@ int main()
 
     GameState *gamestate = &engine->gamestate;
 
-    gamestate->loadFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
-    // gamestate->loadDefaultBoard(); // accurate up to perft 6
+    //gamestate->loadFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+    gamestate->loadDefaultBoard(); // accurate up to perft 6
     std::cout << getPrintableBoardState(gamestate->state) << '\n';
 
     // Move castling_move = 0b1100111100111010;
@@ -34,7 +34,7 @@ int main()
     // std::cout << '\n' << getPrintableBoardState(gamestate->state) << '\n';
     // return 0;
 
-    int perft_depth = 4;
+    int perft_depth = 7;
     auto start = std::chrono::high_resolution_clock::now();
 
     unsigned long long node_count;
