@@ -21,7 +21,7 @@ int main()
 
     GameState *gamestate = &engine->gamestate;
 
-    //gamestate->loadFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+    // gamestate->loadFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
     gamestate->loadDefaultBoard(); // accurate up to perft 6
     std::cout << getPrintableBoardState(gamestate->state) << '\n';
 
@@ -34,24 +34,24 @@ int main()
     // std::cout << '\n' << getPrintableBoardState(gamestate->state) << '\n';
     // return 0;
 
-    int perft_depth = 7;
-    auto start = std::chrono::high_resolution_clock::now();
+    int perft_depth = 5;
+    auto start = std::chrono::steady_clock::now();
 
-    unsigned long long node_count;
+    unsigned long long node_count = 0;
     int trial_count = 1;
     for (int i = 0; i < trial_count; i++)
         node_count = engine->perft(perft_depth);
 
-    auto end = std::chrono::high_resolution_clock::now();
+    auto end = std::chrono::steady_clock::now();
 
-    std::cout << "Move count at PERFT " << perft_depth << ": " << node_count << std::endl;
+    auto duration = end - start;
+    double seconds = std::chrono::duration<double>(duration).count();
+    double nanoseconds = std::chrono::duration<double, std::nano>(duration).count();
 
-    auto duration = duration_cast<std::chrono::nanoseconds>(end - start);
-    auto sec = std::chrono::duration_cast<std::chrono::seconds>(duration);
-
-    std::cout << "Total Elapsed time: " << sec.count() << "s\n";
-    std::cout << "Average time per node: " << duration.count() / node_count << " ns\n";
-    std::cout << "Nodes per second: " << node_count / (sec.count() <= 1 ? 1 : sec.count()) << " nodes/s\n";
+    std::cout << "Move count at PERFT " << perft_depth << ": " << node_count << '\n';
+    std::cout << "Total elapsed time: " << seconds << " s\n";
+    std::cout << "Average time per node: " << (nanoseconds / node_count) << " ns\n";
+    std::cout << "Nodes per second: " << (node_count / seconds) << " nodes/s\n";
 
     return 0;
 }
