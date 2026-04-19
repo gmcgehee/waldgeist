@@ -9,38 +9,11 @@
 #include "movegen.hpp"
 #include "engine.hpp"
 
+#include "debug.hpp"
+
 // temporary
 #include <chrono>
 
-// gpt generated
-void print_bits(uint16_t v, int bits) {
-    for (int i = bits - 1; i >= 0; --i)
-        putchar((v >> i) & 1 ? '1' : '0');
-}
-
-void print_move(uint16_t m, int idx) {
-    printf("Move %d: %u %u %u %u\n",
-        idx,
-        (m >> 14) & 0x3,   // flag (2 bits)
-        (m >> 12) & 0x3,   // promotion (2 bits)
-        (m >> 6)  & 0x3F,  // origin (6 bits)
-        m & 0x3F           // destination (6 bits)
-    );
-}
-
-void print_move_bin(uint16_t m, int idx) {
-    printf("Move %d: ", idx);
-
-    print_bits((m >> 14) & 0x3, 2);
-    putchar(' ');
-    print_bits((m >> 12) & 0x3, 2);
-    putchar(' ');
-    print_bits((m >> 6) & 0x3F, 6);
-    putchar(' ');
-    print_bits(m & 0x3F, 6);
-
-    putchar('\n');
-}
 
 int main()
 {
@@ -49,10 +22,29 @@ int main()
 
     GameState *gamestate = &engine->gamestate;
 
+    // gamestate->loadFromFen("rnbqkbnr/8/8/8/8/8/8/RNBQKBNR w KQkq - 0 1");
     gamestate->loadDefaultBoard();
-    std::cout << getPrintableBoardState(gamestate->state) << std::endl;
+    // std::cout << getPrintableBoardState(gamestate->state) << std::endl;
 
-    unsigned long long move_count = engine->perft(2);
+    int perft_depth = 4;
+    auto start = std::chrono::high_resolution_clock::now();
+
+
+    unsigned long long move_count;
+    int trial_count = 1;
+    for (int i = 0; i < trial_count; i++)
+        move_count = engine->perft(perft_depth);
+    
+    auto end = std::chrono::high_resolution_clock::now();
+
+
+    std::cout << "Move count at PERFT " << perft_depth << ": " << move_count << std::endl;
+
+    auto duration = duration_cast<std::chrono::nanoseconds>(end - start);
+
+    std::cout << "Total Elapsed time: " << duration.count() << "ns\n";
+    std::cout << "Average time per trial: " << duration.count() / trial_count << " ns\n";
+
 
     return 0;
 }

@@ -24,14 +24,14 @@ namespace MoveGeneration
         /// bit  0- 5: destination square (from 0 to 63)
         /// bit  6-11: origin square (from 0 to 63)
         /// bit 12-13: promotion piece type - 2 (from KNIGHT-2 to QUEEN-2)
-        /// bit 14-15: special move flag: promotion (1), en passant (2), castling (3)
-        /// NOTE: EN-PASSANT bit is set only when a pawn can be captured
+        /// bit 14-15: special move flag: promotion (1), double push (2), castling (3)
+        /// NOTE: EN-PASSANT bit is set only when a pawn can be captured // wait, is this supposed to mean there is a pawn that can capture
         //  ^^^^^^^^^^ does this mean it is set when a pawn is double pushed, or when en passant is performed in a capture? this is pretty crucial.
 
         Move move = 0U;
 
-        move |= destination;
-        move |= origin << 6U;
+        move |= destination; 
+        move |= origin << 6U; 
         move |= promotion_piece << 12U;
         move |= flag << 14U;
 
@@ -176,7 +176,7 @@ namespace MoveGeneration
             while (two_push)
             {
                 square = pop_lsb(two_push);
-                move = convertToMove(square, square - 16, EMPTY, EN_PASSANT);
+                move = convertToMove(square, square - 16, PAWN, PAWN_DOUBLE_PUSH);
                 move_list.push_back(move);
             }
         }
@@ -209,7 +209,7 @@ namespace MoveGeneration
             while (two_push)
             {
                 square = pop_lsb(two_push);
-                move = convertToMove(square, square + 16, EMPTY, EN_PASSANT);
+                move = convertToMove(square, square + 16, PAWN, PAWN_DOUBLE_PUSH);
                 move_list.push_back(move);
             }
         }

@@ -2,17 +2,24 @@
 
 #include <string>
 #include <set>
+#include <immintrin.h>
 
 #include "types.hpp"
 #include "bitboard.hpp"
+#include "tables.hpp"
+#include "../precalculation/bishop/bishop_pext_tables.hpp"
+#include "../precalculation/bishop/bishop_ray_masks.hpp"
+#include "../precalculation/rook/rook_pext_tables.hpp"
+#include "../precalculation/rook/rook_ray_masks.hpp"
+
+#include "debug.hpp"
 
 class GameState
 {
 
 public:
     BoardState state;
-    std::array<Piece, 64> mailbox{};
-    std::set<Square> attacked_squares;
+    Mailbox mailbox{};
 
     GameState(std::string fen = "")
     {
@@ -239,7 +246,7 @@ public:
 
     Bitboard getFullState()
     {
-        return getSideState(BLACK) & getSideState(WHITE);
+        return getSideState(BLACK) | getSideState(WHITE);
     }
 
     inline Piece getPieceAt(Square square)
@@ -262,9 +269,41 @@ public:
         unset_bit(*piece.piece_bb, square);
     }
 
-    bool isSquareThreatened(Square square)
+    bool isSquareThreatened(Square square, Side bySide)
     {
-        // how am I even going to do this?
+        Bitboard occ = getSideState(WHITE) | getSideState(BLACK);
+        Bitboard threatened_squares = 0ULL; // will not be all threatened squares (like with knight and pawn moves) but just the relevant ones
+
+        // Pawn-threatened
+        if (PAWN_ATTACKS[bySide == WHITE ? BLACK : WHITE][square] & state.pieces[bySide][PAWN])
+            return true;
+
+        // Knight-threatened
+        if (KNIGHT_MOVES[square] & state.pieces[bySide][KNIGHT])
+            return true;
+
+        // Bishop-threatened
+        int bishop_pext_index = (int)_pext_u64(occ, BISHOP_RAY_MASKS[square]);
+        Bitboard bishop_attacks = BISHOP_PEXT_TABLES[square][bishop_pext_index];
+
+        if (bishop_attacks & state.pieces[bySide][BISHOP])
+            return true; // checks if there are any bishops on those diagonals
+
+        // Rook-threatened
+        int rook_pext_index = (int)_pext_u64(occ, ROOK_RAY_MASKS[square]);
+        Bitboard rook_attacks = ROOK_PEXT_TABLES[square][rook_pext_index];
+
+        if (rook_attacks & state.pieces[bySide][ROOK])
+            return true;
+
+        // Queen-threatened
+        if ((rook_attacks | bishop_attacks) & state.pieces[bySide][QUEEN])
+            return true;
+
+        // King-threatened
+        if (KING_MOVES[square] & state.pieces[bySide][KING])
+            return true;
+
         return false;
     }
 
@@ -273,21 +312,11 @@ public:
     Undo make(Move move)
     {
 
-        // I somehow need to check if the king will continue to be in check after making a move, but without making the move
-
-        /*
-
-            What to account for:
-             - castling rights changes
-             - piece moving
-             - en passant square
-             - counters (halfmove, fullmove)
-             - side to play
-            In other words, keep everything in the gamestate
-
-            Update both the mailbox and the bitboards!
-
-        */
+        // Temporary for debug
+        // std::cout << "\nBitboards: \n"
+        //           << getPrintableBoardState(state) << std::endl;
+        // std::cout << "\nMailbox: \n"
+        //           << getPrintableBoardState(mailbox) << std::endl;
 
         // DECONSTRUCT THE MOVE
         Square destination = move & 0x3F;
@@ -299,10 +328,19 @@ public:
         Piece piece_on_origin = getPieceAt(origin);
         if (piece_on_origin.piece_type == EMPTY)
         {
-            std::cout << getPrintableBoardState(state) << std::endl;
+            printf("\n");
+            std::cout << "Failed to find piece on square " << indexToSquare(origin) << std::endl;
+            std::cout << exportFen(state) << std::endl;
+            std::cout << "\nBitboards: \n"
+                      << getPrintableBoardState(state) << std::endl;
+            std::cout << "\nMailbox: \n"
+                      << getPrintableBoardState(mailbox) << std::endl;
+
             throw "`make()` attempted to move empty piece square.";
         }
-        Side us = piece_on_origin.color;
+
+        Side us = piece_on_origin.color; // is it better to do this, or to get state.sideToPlay  ?
+        Side them = us == WHITE ? BLACK : WHITE;
 
         Piece piece_on_destination = getPieceAt(destination);
 
@@ -314,36 +352,110 @@ public:
             state.halfMoves        // u8 halfmoves;
         };
 
-        // Modify non-piece BoardState elements
+        // DESTINATION PIECE
+
+        undo.captured = getPieceAt(destination);
 
         if (piece_on_destination.piece_type != EMPTY)
             state.halfMoves = 0;
-        state.fullMoves += state.sideToPlay == BLACK ? 1 : 0; // every time Black plays, fullMoves increases by 1
+        state.fullMoves += us == BLACK ? 1 : 0; // every time Black plays, fullMoves increases by 1
         state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
+
+        if (piece_on_destination.piece_type == ROOK)
+        {
+            // castlingRights = 0000 - KQkq
+
+            switch (destination)
+            {
+            case (a1):
+                if (piece_on_origin.color == WHITE)
+                    state.castlingRights &= 0b0111;
+                break;
+            case (h1):
+                if (piece_on_origin.color == WHITE)
+                    state.castlingRights &= 0b1011;
+                break;
+            case (a8):
+                if (piece_on_origin.color == BLACK)
+                    state.castlingRights &= 0b1101;
+                break;
+            case (h8):
+                if (piece_on_origin.color == BLACK)
+                    state.castlingRights &= 0b1110;
+                break;
+            default:
+                break;
+            }
+
+            state.castlingRights &= 0b1111;
+        }
+
+        // ORIGIN PIECE
+
+        if (piece_on_origin.piece_type == ROOK)
+        {
+            switch (origin)
+            {
+            case (a1):
+                if (piece_on_origin.color == WHITE)
+                    state.castlingRights &= 0b0111;
+                break;
+            case (h1):
+                if (piece_on_origin.color == WHITE)
+                    state.castlingRights &= 0b1011;
+                break;
+            case (a8):
+                if (piece_on_origin.color == BLACK)
+                    state.castlingRights &= 0b1101;
+                break;
+            case (h8):
+                if (piece_on_origin.color == BLACK)
+                    state.castlingRights &= 0b1110;
+                break;
+            default:
+                break;
+            }
+        }
+
+        else if (piece_on_origin.piece_type == KING)
+        {
+            state.castlingRights &= 0b0011 << (2 * us);
+        }
 
         // Pawn specialties
 
         // If there's a pawn moving onto the en passant square, it is guaranteed to be capturing.
         // Due to the rules of chess, it's not possible for another pawn to move onto the en passant square except for a capture.
-        if (piece_on_origin.piece_type == PAWN)
+        else if (piece_on_origin.piece_type == PAWN)
         {
             state.halfMoves = 0;
             if (destination == state.enPassantSquare)
             {
                 int direction = us == WHITE ? -1 : 1;
-                unsetPieceAt(destination + 8 * direction);
+                Square piece_captured_square = destination + 8 * direction;
+                Piece piece_captured = getPieceAt(piece_captured_square);
+                undo.captured = piece_captured;
+                unsetPieceAt(piece_captured_square);
             }
+            else
+            {
+                undo.captured = getPieceAt(destination);
+            }
+        }
+        else
+        {
+            unsetPieceAt(destination);
         }
 
         state.enPassantSquare = 0;
 
         unsetPieceAt(origin); // is this always done? I believe so...
-        setPieceAt(destination, piece_on_origin);
 
         // Modify the game state in a unique manner in special circumstances
         switch (flag)
         {
         case NONSPECIAL:
+            setPieceAt(destination, piece_on_origin);
             break;
         case PROMOTION:
             switch (promotion_piece)
@@ -354,6 +466,9 @@ public:
             case BISHOP:
                 setPieceAt(destination, Piece{BISHOP, us, &state.pieces[us][BISHOP]});
                 break;
+            case ROOK:
+                setPieceAt(destination, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                break;
             case QUEEN:
                 setPieceAt(destination, Piece{QUEEN, us, &state.pieces[us][QUEEN]});
                 break;
@@ -361,8 +476,9 @@ public:
                 break;
             }
             break;
-        case EN_PASSANT:
+        case PAWN_DOUBLE_PUSH:
             // this needs to unset the piece one above or one below the en passant square. One above if us == WHITE, opposite otherwise
+            setPieceAt(destination, piece_on_origin);
             {
                 int direction = us == WHITE ? -1 : 1;
                 state.enPassantSquare = destination + (8 * direction);
@@ -378,16 +494,30 @@ public:
             {
                 Square king_square = __builtin_ctzll(state.pieces[us][KING]);
 
-                int direction = us == WHITE ? -1 : 1;
+                // int direction = us == WHITE ? -1 : 1;
                 switch (destination - origin)
                 {
                 case 2: // if the king is moving two to the left, e.g. queenside
-                    if (isSquareThreatened(king_square) or isSquareThreatened(king_square - 1) or isSquareThreatened(king_square - 2))
+                    if (isSquareThreatened(king_square, them) or isSquareThreatened(king_square - 1, them) or isSquareThreatened(king_square - 2, them))
                         unmake(move, undo);
+                    else
+                    {
+                        // king should already be on destination just need to move the rook
+                        Square rook_square = destination - 2;
+                        unsetPieceAt(rook_square);
+                        setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                    }
                     break;
                 case -2: // if the king is moving two to the right, e.g. kingside
-                    if (isSquareThreatened(king_square) or isSquareThreatened(king_square + 1) or isSquareThreatened(king_square + 2))
+                    if (isSquareThreatened(king_square, them) or isSquareThreatened(king_square + 1, them) or isSquareThreatened(king_square + 2, them))
                         unmake(move, undo);
+                    else
+                    {
+                        // king should already be on destination just need to move the rook
+                        Square rook_square = destination + 1;
+                        unsetPieceAt(rook_square);
+                        setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                    }
                     break;
                 default:
                     break;
@@ -398,57 +528,71 @@ public:
             break;
         }
 
-        if (isSquareThreatened(__builtin_ctzll(state.pieces[us][KING])))
+        if (isSquareThreatened(__builtin_ctzll(state.pieces[us][KING]), them))
         {
             unmake(move, undo);
         }
 
-        return undo;
+        return undo; // the trouble: this could return an undo and then unmake even though I've already unmaked.
     }
 
     void unmake(Move move, Undo undo)
     {
-        // I somehow need to check if the king will continue to be in check after making a move, but without making the move
 
-        /*
+        // Temporary for debug
+        // std::cout << "\nBitboards: \n"
+        //           << getPrintableBoardState(state) << std::endl;
+        // std::cout << "\nMailbox: \n"
+        //           << getPrintableBoardState(mailbox) << std::endl;
 
-            What to account for:
-             - castling rights changes
-             - piece moving
-             - en passant square
-             - counters (halfmove, fullmove)
-             - side to play
-            In other words, keep everything in the gamestate
-
-            Update both the mailbox and the bitboards!
-
-        */
+        if (undo.castling_rights & 0xF0) return;
+        // 0b11110000
+        // 0b0000KQkq
 
         // DECONSTRUCT THE MOVE
         // origin and destination are swapped
         Square origin = move & 0x3F;
         Square destination = (move >> 6) & 0x3F;
-        u8 promotion_piece = ((move >> 12) & 0x3); // adds 2 because 0 means knight, but in the enum it means empty
+        u8 promotion_piece = ((move >> 12) & 0x3) + 1; // adds 1 because 0 in Move means knight, but 0 in enum means pawn, which is obviously not a promotion piece
         u8 flag = (move >> 14);
 
         // Get pieces at squares in order to determine captures
         Piece piece_on_origin = getPieceAt(origin);
         if (piece_on_origin.piece_type == EMPTY)
+        {
+            printf("\n");
+            std::cout << "Failed to find piece on square " << indexToSquare(origin) << std::endl;
+            print_move(move, 0);
+            std::cout << exportFen(state) << std::endl;
+            std::cout << "\nBitboards: \n"
+                      << getPrintableBoardState(state) << std::endl;
+            std::cout << "\nMailbox: \n"
+                      << getPrintableBoardState(mailbox) << std::endl;
             throw "`unmake()` attempted to move empty piece square.";
+        }
+
         Side us = piece_on_origin.color;
         Side them = us == WHITE ? BLACK : WHITE;
 
         // ALWAYS DONE
         unsetPieceAt(origin);
 
-        if (origin == undo.en_passant_square)
+        // Reset captured piece
+        if (origin == state.enPassantSquare && piece_on_origin.piece_type == PAWN)
         {
             int direction = us == WHITE ? -1 : 1;
-            setPieceAt(origin + 8 * direction, Piece{PAWN, them, &state.pieces[them][PAWN]});
-            setPieceAt(destination, piece_on_origin);
+            setPieceAt(origin + 8 * direction, undo.captured);
+        }
+        else
+        {
+            if (undo.captured.piece_type != EMPTY)
+                setPieceAt(origin, undo.captured);
         }
 
         state.enPassantSquare = undo.en_passant_square;
+        state.castlingRights = undo.castling_rights;
+        state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
+        state.fullMoves -= state.sideToPlay == BLACK ? 1 : 0;
 
         // Modify the game state in a unique manner in special circumstances
         switch (flag)
@@ -459,9 +603,9 @@ public:
         case PROMOTION:
             setPieceAt(destination, Piece{PAWN, us, &state.pieces[us][PAWN]});
             break;
-        case EN_PASSANT: // this is if en passant can be performed, not if en_passant just happened
+        case PAWN_DOUBLE_PUSH:
         {
-            // do nothing?
+            setPieceAt(destination, piece_on_origin);
             break;
         }
         break;
@@ -473,9 +617,28 @@ public:
              2. determine kingside/queenside
             */
             {
-                Square king_square = pop_lsb(state.pieces[us][KING]);
+                setPieceAt(destination, Piece{KING, us, &state.pieces[us][KING]});
+                int direction = origin - destination;
 
-                int direction = us == WHITE ? -1 : 1;
+                switch (destination - origin)
+                {
+                case -2: // if the king has to move back twice, the rook is currently to his left 1 and needs to be moved right twice
+                {
+                    Square rook_square = origin - 1;
+                    unsetPieceAt(rook_square);
+                    setPieceAt(destination + 2, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                }
+                break;
+                case 2: // if the king has to move forward twice, the rook is currently to his right 1 and needs to be moved left 3 times
+                {
+                    Square rook_square = origin + 1;
+                    unsetPieceAt(rook_square);
+                    setPieceAt(destination - 3, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                }
+                break;
+                default:
+                    break;
+                }
             }
 
             break;

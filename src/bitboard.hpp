@@ -294,6 +294,59 @@ std::string exportFen(BoardState state)
     return fen;
 }
 
+std::string getPrintableBoardState(std::array<Piece, 64> mailbox)
+{
+    std::string printableBoard;
+
+    for (int row = 0; row < 8; row++)
+    {
+        for (int file = 7; file >= 0; file--)
+        {
+            Square square = 8 * row + file;
+
+            char pieceChar;
+
+            switch (mailbox[square].piece_type)
+            {
+            case EMPTY:
+                pieceChar = '.';
+                break;
+            case PAWN:
+                pieceChar = 'p';
+                break;
+            case KNIGHT:
+                pieceChar = 'n';
+                break;
+            case BISHOP:
+                pieceChar = 'b';
+                break;
+            case ROOK:
+                pieceChar = 'r';
+                break;
+            case QUEEN:
+                pieceChar = 'q';
+                break;
+            case KING:
+                pieceChar = 'k';
+                break;
+            default:
+                break;
+            }
+
+            if (mailbox[square].color == WHITE)
+                pieceChar = (char)toupper(pieceChar);
+
+            if (file == 7)
+            {
+                printableBoard.insert(0, "\n");
+            }
+            printableBoard.insert(0, std::format(" {}", pieceChar));
+        }
+    }
+
+    return printableBoard;
+}
+
 std::string getPrintableBoardState(BoardState state)
 {
     std::string fen = exportFen(state);
