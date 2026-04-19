@@ -15,6 +15,7 @@
 namespace MoveGeneration
 {
 
+
     inline Move convertToMove(Square destination, Square origin, PieceType promotion_piece = PAWN, SpecialMoveFlag flag = NONSPECIAL)
     {
 
@@ -30,18 +31,16 @@ namespace MoveGeneration
 
         Move move = 0U;
 
-        move |= destination; 
-        move |= origin << 6U; 
+        move |= destination;
+        move |= origin << 6U;
         move |= promotion_piece << 12U;
         move |= flag << 14U;
 
         return move;
     }
 
-    std::vector<Move> generatePawnCaptures(Bitboard their_state, Bitboard our_p_state, Side us, Square en_passant_square = 0)
+    void generatePawnCaptures(Bitboard their_state, Bitboard our_p_state, Side us, Square en_passant_square, MoveList& move_list)
     {
-        std::vector<Move> move_list = {};
-        move_list.reserve(14); // maximum of 14 possible pawn captures in any state
 
         Bitboard west_captures;
         Bitboard east_captures;
@@ -66,12 +65,12 @@ namespace MoveGeneration
                     for (int piece = 0; piece < KING - 1; piece++)
                     {
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
-                        move_list.push_back(move);
+                         move_list.moves[move_list.count++] = move;
                     }
                     break;
                 }
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
 
             west_captures = northw(our_p_state) & their_state;
@@ -85,12 +84,12 @@ namespace MoveGeneration
                     for (int piece = 0; piece < KING - 1; piece++)
                     {
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
-                        move_list.push_back(move);
+                         move_list.moves[move_list.count++] = move;
                     }
                     break;
                 }
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
         else
@@ -107,12 +106,12 @@ namespace MoveGeneration
                     for (int piece = 0; piece < KING - 1; piece++)
                     {
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
-                        move_list.push_back(move);
+                         move_list.moves[move_list.count++] = move;
                     }
                     break;
                 }
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
 
             west_captures = southw(our_p_state) & their_state;
@@ -126,24 +125,18 @@ namespace MoveGeneration
                     for (int piece = 0; piece < KING - 1; piece++)
                     {
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
-                        move_list.push_back(move);
+                         move_list.moves[move_list.count++] = move;
                     }
                     break;
                 }
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
-
-        return move_list;
     }
 
-    std::vector<Move> generatePawnPushes(Bitboard empty, Bitboard our_p_state, Side us)
+    void generatePawnPushes(Bitboard empty, Bitboard our_p_state, Side us, MoveList& move_list)
     {
-        // TODO: include promotions
-        // how is it labelled that there will be an en passant square?
-        std::vector<Move> move_list = {};
-        move_list.reserve(16);
 
         Bitboard one_push;
         Bitboard two_push;
@@ -165,19 +158,19 @@ namespace MoveGeneration
                     for (int piece = 0; piece < KING - 1; piece++)
                     {
                         Move move = convertToMove(square, square - 8, (PieceType)piece, PROMOTION);
-                        move_list.push_back(move);
+                         move_list.moves[move_list.count++] = move;
                     }
                     break;
                 }
                 move = convertToMove(square, square - 8);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
 
             while (two_push)
             {
                 square = pop_lsb(two_push);
                 move = convertToMove(square, square - 16, PAWN, PAWN_DOUBLE_PUSH);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
         else
@@ -197,30 +190,26 @@ namespace MoveGeneration
                     for (int piece = 0; piece < KING - 1; piece++)
                     {
                         Move move = convertToMove(square, square - 8, (PieceType)piece, PROMOTION);
-                        move_list.push_back(move);
+                         move_list.moves[move_list.count++] = move;
                     }
                     break;
                 }
 
                 move = convertToMove(square, square + 8);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
 
             while (two_push)
             {
                 square = pop_lsb(two_push);
                 move = convertToMove(square, square + 16, PAWN, PAWN_DOUBLE_PUSH);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
-
-        return move_list;
     };
 
-    std::vector<Move> generateKnightCaptures(Bitboard their_state, Bitboard our_n_state)
+    void generateKnightCaptures(Bitboard their_state, Bitboard our_n_state, MoveList& move_list)
     {
-        std::vector<Move> move_list;
-        move_list.reserve(8 * std::popcount(our_n_state)); // NOTE: is this right to do? some considerations:
 
         // - The number 16 (originally) is because two knights in the middle of the board (safe assumption) have 8 moves
         // - Might I want to take the populattion count?
@@ -234,20 +223,13 @@ namespace MoveGeneration
             {
                 Square destination = pop_lsb(knight_captures_squares);
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
-        return move_list;
     }
 
-    std::vector<Move> generateKnightQuiets(Bitboard empty, Bitboard our_n_state)
+    void generateKnightQuiets(Bitboard empty, Bitboard our_n_state, MoveList& move_list)
     {
-
-        std::vector<Move> move_list;
-        move_list.reserve(8 * std::popcount(our_n_state)); // NOTE: is this right to do? some considerations:
-
-        // - The number 16 (originally) is because two knights in the middle of the board (safe assumption) have 8 moves
-        // - Might I want to take the populattion count?
 
         while (our_n_state)
         {
@@ -258,29 +240,15 @@ namespace MoveGeneration
             {
                 Square destination = pop_lsb(knight_squares);
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
-        return move_list;
     }
 
     // todo: currently returns captures and quiets as one thing
-    std::vector<Move> generateBishopMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state)
+    void generateBishopMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state, MoveList& move_list)
     {
 
-        std::vector<Move> move_list;
-
-        /*
-        Logical ordering:
-        Generate all bishop moves given bishop current position and blockers (~empty)
-        & it with their state
-        return move list
-
-        considerations: it's going to have to pop off one bit at a time anyways. what if I generate all possible moves right here, but with captures at the beginning?
-        how would I mak
-        */
-
-        // O(bishop_count) time complexity
         while (our_b_state)
         {
             Square origin = pop_lsb(our_b_state);
@@ -293,30 +261,26 @@ namespace MoveGeneration
             {
                 Square destination = pop_lsb(captures);
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
 
             while (quiets)
             {
                 Square destination = pop_lsb(quiets);
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
-
-        return move_list;
     }
 
     // NOTE: currently unused
-    std::vector<Move> generateBishopCaptures(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state);
+    void generateBishopCaptures(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state, MoveList& move_list);
 
     // NOTE: currently unused
-    std::vector<Move> generateBishopQuiets(Bitboard empty, Bitboard our_b_state);
+    void generateBishopQuiets(Bitboard empty, Bitboard our_b_state, MoveList& move_list);
 
-    std::vector<Move> generateRookMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_r_state)
+    void generateRookMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_r_state, MoveList& move_list)
     {
-
-        std::vector<Move> move_list;
 
         while (our_r_state)
         {
@@ -330,29 +294,26 @@ namespace MoveGeneration
             {
                 Square destination = pop_lsb(captures);
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
 
             while (quiets)
             {
                 Square destination = pop_lsb(quiets);
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
-
-        return move_list;
     }
 
     // NOTE: currently unused
-    std::vector<Move> generateRookCaptures(Bitboard empty, Bitboard our_r_state);
+    void generateRookCaptures(Bitboard empty, Bitboard our_r_state, MoveList& move_list);
 
     // NOTE: currently unused
-    std::vector<Move> generateRookQuiets(Bitboard empty, Bitboard our_r_state);
+    void generateRookQuiets(Bitboard empty, Bitboard our_r_state, MoveList& move_list);
 
-    std::vector<Move> generateQueenMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_q_state)
+    void generateQueenMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_q_state, MoveList& move_list)
     {
-        std::vector<Move> move_list;
 
         while (our_q_state)
         {
@@ -368,31 +329,26 @@ namespace MoveGeneration
             {
                 Square destination = pop_lsb(captures);
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
 
             while (quiets)
             {
                 Square destination = pop_lsb(quiets);
                 Move move = convertToMove(destination, origin);
-                move_list.push_back(move);
+                 move_list.moves[move_list.count++] = move;
             }
         }
-
-        return move_list;
     }
 
     // NOTE: currently unused
-    std::vector<Move> generateQueenCaptures(Bitboard their_state, Bitboard our_q_state);
+    void generateQueenCaptures(Bitboard their_state, Bitboard our_q_state, MoveList& move_list);
 
     // NOTE: currently unused
-    std::vector<Move> generateQueenQuiets(Bitboard empty, Bitboard our_q_state);
+    void generateQueenQuiets(Bitboard empty, Bitboard our_q_state, MoveList& move_list);
 
-    std::vector<Move> generateKingCaptures(Bitboard their_state, Bitboard our_k_state)
+    void generateKingCaptures(Bitboard their_state, Bitboard our_k_state, MoveList& move_list)
     {
-        std::vector<Move> move_list;
-
-        move_list.reserve(8);
 
         Square origin = __builtin_ctzll(our_k_state); // no need to pop lsb and modify k state
         Bitboard king_squares = KING_MOVES[origin] & their_state;
@@ -401,17 +357,12 @@ namespace MoveGeneration
         {
             Square destination = pop_lsb(king_squares);
             Move move = convertToMove(destination, origin);
-            move_list.push_back(move);
+             move_list.moves[move_list.count++] = move;
         }
-
-        return move_list;
     }
 
-    std::vector<Move> generateKingQuiets(Bitboard empty, Bitboard our_k_state, u8 castling_rights, Side us)
+    void generateKingQuiets(Bitboard empty, Bitboard our_k_state, u8 castling_rights, Side us, MoveList& move_list)
     {
-        std::vector<Move> move_list;
-
-        move_list.reserve(8); // even with castling taken into account, there will only ever be 8 max
 
         Square origin = __builtin_ctzll(our_k_state); // no need to pop lsb and modify k state
         Bitboard king_squares = KING_MOVES[origin] & empty;
@@ -420,7 +371,7 @@ namespace MoveGeneration
         {
             Square destination = pop_lsb(king_squares);
             Move move = convertToMove(destination, origin);
-            move_list.push_back(move);
+             move_list.moves[move_list.count++] = move;
         }
 
         // Castling rights
@@ -442,12 +393,12 @@ namespace MoveGeneration
         {
             if (!(east_mask & occupied) && (8 & castling_rights))
             {
-                move_list.push_back(0b1100000100000110); // hard-coded binary castling
+                move_list.moves[move_list.count++] = (0b1100000100000110); // hard-coded binary castling
             }
 
             if (!(west_mask & occupied) && (4 & castling_rights))
             {
-                move_list.push_back(0b1100000100000010); // hard-coded binary castling
+                move_list.moves[move_list.count++] = (0b1100000100000010); // hard-coded binary castling
             }
         }
 
@@ -455,74 +406,46 @@ namespace MoveGeneration
         {
             if (!(east_mask & occupied) && (2 & castling_rights))
             {
-                move_list.push_back(0b1100111100111110);
+                move_list.moves[move_list.count++] = (0b1100111100111110);
             }
 
             if (!(west_mask & occupied) && (1 & castling_rights))
             {
-                move_list.push_back(0b1100111100111010);
+                move_list.moves[move_list.count++] = (0b1100111100111010);
             }
         }
-
-        return move_list;
     }
 
-    std::vector<Move> generateAllMoves(
+    void generateAllMoves(
         Bitboard occ, Bitboard empty, Bitboard their_state, Side us,
         Bitboard our_p_state, Bitboard our_n_state, Bitboard our_b_state,
         Bitboard our_r_state, Bitboard our_q_state, Bitboard our_k_state,
-        u8 castling_rights, Square en_passant_square = 0)
+        u8 castling_rights, Square en_passant_square, MoveList& move_list)
     {
-        std::vector<Move> move_list;
-        move_list.reserve(256);
 
-        auto append_moves = [&move_list](std::vector<Move> &&moves)
-        {
-            move_list.insert(
-                move_list.end(),
-                std::make_move_iterator(moves.begin()),
-                std::make_move_iterator(moves.end()));
-        };
-
-        append_moves(generatePawnCaptures(their_state, our_p_state, us, en_passant_square));
-        append_moves(generatePawnPushes(empty, our_p_state, us));
-        append_moves(generateKnightCaptures(their_state, our_n_state));
-        append_moves(generateKnightQuiets(empty, our_n_state));
-        append_moves(generateBishopMoves(occ, empty, their_state, our_b_state));
-        append_moves(generateRookMoves(occ, empty, their_state, our_r_state));
-        append_moves(generateQueenMoves(occ, empty, their_state, our_q_state));
-        append_moves(generateKingCaptures(their_state, our_k_state));
-        append_moves(generateKingQuiets(empty, our_k_state, castling_rights, us));
-
-        return move_list;
+        generatePawnCaptures(their_state, our_p_state, us, en_passant_square, move_list);
+        generatePawnPushes(empty, our_p_state, us, move_list);
+        generateKnightCaptures(their_state, our_n_state, move_list);
+        generateKnightQuiets(empty, our_n_state, move_list);
+        generateBishopMoves(occ, empty, their_state, our_b_state, move_list);
+        generateRookMoves(occ, empty, their_state, our_r_state, move_list);
+        generateQueenMoves(occ, empty, their_state, our_q_state, move_list);
+        generateKingCaptures(their_state, our_k_state, move_list);
+        generateKingQuiets(empty, our_k_state, castling_rights, us, move_list);
     }
 
-    std::vector<Move> generateAllCaptures(
+    void generateAllCaptures(
         Bitboard occ, Bitboard empty, Bitboard their_state, Side us,
         Bitboard our_p_state, Bitboard our_n_state, Bitboard our_b_state,
         Bitboard our_r_state, Bitboard our_q_state, Bitboard our_k_state,
-        u8 castling_rights, Square en_passant_square = 0)
+        u8 castling_rights, Square en_passant_square, MoveList& move_list)
     {
-        std::vector<Move> move_list;
-        move_list.reserve(256);
 
-        // gpt generated
-        auto append_moves = [&move_list](std::vector<Move> &&moves)
-        {
-            move_list.insert(
-                move_list.end(),
-                std::make_move_iterator(moves.begin()),
-                std::make_move_iterator(moves.end()));
-        };
-
-        append_moves(generatePawnCaptures(their_state, our_p_state, us, en_passant_square));
-        append_moves(generateKnightCaptures(their_state, our_n_state));
+        generatePawnCaptures(their_state, our_p_state, us, en_passant_square, move_list);
+        generateKnightCaptures(their_state, our_n_state, move_list);
         // append_moves(generateBishopCaptures(occ, empty, their_state, our_b_state));
         // append_moves(generateRookCaptures(occ, empty, their_state, our_r_state));
         // append_moves(generateQueenCaptures(occ, empty, their_state, our_q_state));
-        append_moves(generateKingCaptures(their_state, our_k_state));
-
-        return move_list;
+        generateKingCaptures(their_state, our_k_state, move_list);
     }
-
 }

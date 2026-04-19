@@ -143,3 +143,8 @@ struct Undo
     uint16_t full_moves;
     // Bitboard zobrist;
 };
+
+struct MoveList {
+    Move moves[256];
+    int count = 0;
+};

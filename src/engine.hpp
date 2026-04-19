@@ -44,7 +44,9 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        std::vector<Move> move_list = MoveGeneration::generateAllMoves(
+        MoveList move_list;
+
+        MoveGeneration::generateAllMoves(
             occ,
             empty,
             their_state,
@@ -56,9 +58,10 @@ public:
             our_q_state,
             our_k_state,
             castling_rights,
-            en_passant_square);
+            en_passant_square,
+            move_list);
 
-        if (move_list.empty())
+        if (move_list.count == 0)
         {
             return 0; // or however you represent "no move"
         }
@@ -104,7 +107,9 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        std::vector<Move> captures = MoveGeneration::generateAllCaptures(
+        MoveList capture_list;
+
+        MoveGeneration::generateAllCaptures(
             occ,
             empty,
             their_state,
@@ -116,14 +121,16 @@ public:
             our_q_state,
             our_k_state,
             castling_rights,
-            en_passant_square);
+            en_passant_square,
+            capture_list
+        );
 
-        if (captures.size() == 0)
+        if (capture_list.count == 0)
         {
             return eval();
         }
 
-        for (Move curr_move : captures)
+        for (Move curr_move : capture_list.moves)
         {
             Undo undo;
 
@@ -172,7 +179,9 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        std::vector<Move> move_list = MoveGeneration::generateAllMoves(
+        MoveList move_list;
+
+        MoveGeneration::generateAllMoves(
             occ,
             empty,
             their_state,
@@ -184,19 +193,18 @@ public:
             our_q_state,
             our_k_state,
             castling_rights,
-            en_passant_square);
+            en_passant_square,
+            move_list);
 
         if (depth == 0)
             return 1ULL;
 
-        if (move_list.empty())
+        if (move_list.count == 0)
         {
             return 0; // or however you represent "no move"
         }
 
-        // if (hasDuplicates(move_list)) throw "Duplicate moves in move list";
-
-        for (Move curr_move : move_list)
+        for (Move curr_move : move_list.moves)
         {
             BoardState old_state = gamestate.state;
             Mailbox old_mailbox = gamestate.mailbox;
