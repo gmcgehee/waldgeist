@@ -129,7 +129,7 @@ public:
                         pieceType = KING;
                         break;
                     default:
-                        std::cout << "C: " << c << std::endl;
+                        std::cout << "C: " << c << '\n';
                         throw std::invalid_argument("Unexpected value in FEN field 'pieces'.");
                     }
 
@@ -153,7 +153,7 @@ public:
                 }
                 else
                 {
-                    std::cout << "C: " << c << std::endl;
+                    std::cout << "C: " << c << '\n';
                     throw std::invalid_argument("Unexpected value in FEN field 'side to play'.");
                 }
 
@@ -185,7 +185,7 @@ public:
                 }
                 else
                 {
-                    std::cout << "C: " << c << std::endl;
+                    std::cout << "C: " << c << '\n';
                     throw std::invalid_argument("Unexpected value in FEN field 'castling rights'.");
                 }
             }
@@ -314,9 +314,9 @@ public:
 
         // Temporary for debug
         // std::cout << "\nBitboards: \n"
-        //           << getPrintableBoardState(state) << std::endl;
+        //           << getPrintableBoardState(state) << '\n';
         // std::cout << "\nMailbox: \n"
-        //           << getPrintableBoardState(mailbox) << std::endl;
+        //           << getPrintableBoardState(mailbox) << '\n';
 
         // DECONSTRUCT THE MOVE
         Square destination = move & 0x3F;
@@ -328,12 +328,12 @@ public:
         if (piece_on_origin.piece_type == EMPTY)
         {
             printf("\n");
-            std::cout << "Failed to find piece on square " << indexToSquare(origin) << std::endl;
-            std::cout << exportFen(state) << std::endl;
+            std::cout << "Failed to find piece on square " << indexToSquare(origin) << '\n';
+            std::cout << exportFen(state) << '\n';
             std::cout << "\nBitboards: \n"
-                      << getPrintableBoardState(state) << std::endl;
+                      << getPrintableBoardState(state) << '\n';
             std::cout << "\nMailbox: \n"
-                      << getPrintableBoardState(mailbox) << std::endl;
+                      << getPrintableBoardState(mailbox) << '\n';
 
             throw "`make()` attempted to move empty piece square.";
         }
@@ -533,9 +533,9 @@ public:
 
         // Temporary for debug
         // std::cout << "\nBitboards: \n"
-        //           << getPrintableBoardState(state) << std::endl;
+        //           << getPrintableBoardState(state) << '\n';
         // std::cout << "\nMailbox: \n"
-        //           << getPrintableBoardState(mailbox) << std::endl;
+        //           << getPrintableBoardState(mailbox) << '\n';
 
         // DECONSTRUCT THE MOVE
         // origin and destination are swapped
@@ -552,13 +552,13 @@ public:
         if (piece_on_origin.piece_type == EMPTY)
         {
             printf("\n");
-            std::cout << "Failed to find piece on square " << indexToSquare(origin) << std::endl;
+            std::cout << "Failed to find piece on square " << indexToSquare(origin) << '\n';
             print_move(move, 0);
-            std::cout << exportFen(state) << std::endl;
+            std::cout << exportFen(state) << '\n';
             std::cout << "\nBitboards: \n"
-                      << getPrintableBoardState(state) << std::endl;
+                      << getPrintableBoardState(state) << '\n';
             std::cout << "\nMailbox: \n"
-                      << getPrintableBoardState(mailbox) << std::endl;
+                      << getPrintableBoardState(mailbox) << '\n';
             throw "`unmake()` attempted to move empty piece square.";
         }
 
