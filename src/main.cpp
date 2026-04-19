@@ -22,11 +22,11 @@ int main()
 
     GameState *gamestate = &engine->gamestate;
 
-    // gamestate->loadFromFen("rnbqkbnr/8/8/8/8/8/8/RNBQKBNR w KQkq - 0 1");
-    gamestate->loadDefaultBoard();
+    gamestate->loadFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+    // gamestate->loadDefaultBoard(); accurate up to perft 6
     // std::cout << getPrintableBoardState(gamestate->state) << std::endl;
 
-    int perft_depth = 4;
+    int perft_depth = 6;
     auto start = std::chrono::high_resolution_clock::now();
 
 

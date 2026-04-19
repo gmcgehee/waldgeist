@@ -65,9 +65,13 @@ public:
 
         Move curr_move;
 
-        Undo undo = gamestate.make(curr_move);
-        curr_move = search(depth - 1); // may need to be 'max(curr_best, search())'
-        gamestate.unmake(curr_move, undo);
+        Undo undo;
+
+        if (gamestate.make(curr_move, undo))
+        {
+            curr_move = search(depth - 1); // may need to be 'max(curr_best, search())'
+            gamestate.unmake(curr_move, undo);
+        }
 
         return curr_move;
     }
@@ -121,9 +125,13 @@ public:
 
         for (Move curr_move : captures)
         {
-            Undo undo = gamestate.make(curr_move);
-            float score = quiesce(); // may need to be 'max(curr_best, search())'
-            gamestate.unmake(curr_move, undo);
+            Undo undo;
+
+            if (gamestate.make(curr_move, undo))
+            {
+                float score = quiesce(); // may need to be 'max(curr_best, search())'
+                gamestate.unmake(curr_move, undo);
+            }
         }
     }
 
@@ -186,13 +194,20 @@ public:
             return 0; // or however you represent "no move"
         }
 
+        // if (hasDuplicates(move_list)) throw "Duplicate moves in move list";
+
         for (Move curr_move : move_list)
         {
             BoardState old_state = gamestate.state;
             Mailbox old_mailbox = gamestate.mailbox;
-            Undo undo = gamestate.make(curr_move);
-            node_count += perft(depth - 1);
-            gamestate.unmake(curr_move, undo);
+
+            Undo undo;
+
+            if (gamestate.make(curr_move, undo))
+            {
+                node_count += perft(depth - 1);
+                gamestate.unmake(curr_move, undo);
+            }
 
             // Temporary for debug
             {
@@ -218,12 +233,14 @@ public:
                     throw "sideToPlay didn't restore properly";
                 if (old_state.enPassantSquare != gamestate.state.enPassantSquare)
                     throw "en passant square didn't restore properly";
-            
-            for (int i = 0; i < 64; i++) {
-                if (gamestate.mailbox[i].piece_type != old_mailbox[i].piece_type) {
-                    throw "mailbox didn't restore properly";
+
+                for (int i = 0; i < 64; i++)
+                {
+                    if (gamestate.mailbox[i].piece_type != old_mailbox[i].piece_type)
+                    {
+                        throw "mailbox didn't restore properly";
+                    }
                 }
-            }
             }
         }
 

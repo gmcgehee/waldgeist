@@ -48,7 +48,7 @@ namespace MoveGeneration
         Square origin;
         Square destination;
 
-        if (en_passant_square > 0) // the en passant square will never be a0
+        if (en_passant_square > 0) // the en passant square will never be a1
         {
             set_bit(their_state, en_passant_square); // en passant is accounted for in make--no need to make a special move flag
         }

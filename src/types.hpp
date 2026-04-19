@@ -139,6 +139,7 @@ struct Undo
     Piece captured;
     Square en_passant_square;
     u8 castling_rights;
-    u8 halfmoves;
+    u8 half_moves;
+    uint16_t full_moves;
     // Bitboard zobrist;
 };

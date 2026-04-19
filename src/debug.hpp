@@ -1,6 +1,17 @@
 #pragma once
 
 
+#include <vector>
+#include <algorithm>
+
+bool hasDuplicates(std::vector<Move> move_list) {
+    std::sort(move_list.begin(), move_list.end());
+    for (size_t i = 1; i < move_list.size(); ++i) {
+        if (move_list[i] == move_list[i - 1]) return true;
+    }
+    return false;
+}
+
 // gpt generated
 void print_bits(uint16_t v, int bits)
 {

@@ -309,7 +309,7 @@ public:
 
     /// @brief  Moves one piece
     /// @param move A 16-bit integer. Bits 0-5 hold origin, 6-11 hold destination, and 12-16 include special move flags and promotion piece type (not in that order).
-    Undo make(Move move)
+    bool make(Move move, Undo& undo)
     {
 
         // Temporary for debug
@@ -323,9 +323,8 @@ public:
         Square origin = (move >> 6) & 0x3F;
         u8 promotion_piece = ((move >> 12) & 0x3) + 1; // adds 1 because 0 means knight, but in the enum it means pawn
         u8 flag = (move >> 14);
-
-        // Get pieces at squares in order to determine captures
         Piece piece_on_origin = getPieceAt(origin);
+
         if (piece_on_origin.piece_type == EMPTY)
         {
             printf("\n");
@@ -339,26 +338,26 @@ public:
             throw "`make()` attempted to move empty piece square.";
         }
 
+        Piece piece_on_destination = getPieceAt(destination);
         Side us = piece_on_origin.color; // is it better to do this, or to get state.sideToPlay  ?
         Side them = us == WHITE ? BLACK : WHITE;
 
-        Piece piece_on_destination = getPieceAt(destination);
-
-        Undo undo = {
+        undo = {
             move,                  // Move move;
             piece_on_destination,  // Piece captured;
             state.enPassantSquare, // Square en_passant_square;
             state.castlingRights,  // u8 castling_rights;
-            state.halfMoves        // u8 halfmoves;
+            state.halfMoves,       // u8 half_moves;
+            state.fullMoves        // uint16_t full_moves
         };
 
-        // DESTINATION PIECE
+        // If this was a capture or a pawn move, half moves becomes 0. Otherwise, halfmoves becomes 1.
+        state.halfMoves = piece_on_destination.piece_type != EMPTY or piece_on_origin.piece_type == PAWN ? 0 : state.halfMoves + 1;
 
-        undo.captured = getPieceAt(destination);
+        // Every time black plays, fullMoves increases
+        state.fullMoves += us == BLACK ? 1 : 0;
 
-        if (piece_on_destination.piece_type != EMPTY)
-            state.halfMoves = 0;
-        state.fullMoves += us == BLACK ? 1 : 0; // every time Black plays, fullMoves increases by 1
+        // Toggle slide to play
         state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
 
         if (piece_on_destination.piece_type == ROOK)
@@ -368,26 +367,24 @@ public:
             switch (destination)
             {
             case (a1):
-                if (piece_on_origin.color == WHITE)
+                if (piece_on_destination.color == WHITE)
                     state.castlingRights &= 0b0111;
                 break;
             case (h1):
-                if (piece_on_origin.color == WHITE)
+                if (piece_on_destination.color == WHITE)
                     state.castlingRights &= 0b1011;
                 break;
             case (a8):
-                if (piece_on_origin.color == BLACK)
+                if (piece_on_destination.color == BLACK)
                     state.castlingRights &= 0b1101;
                 break;
             case (h8):
-                if (piece_on_origin.color == BLACK)
+                if (piece_on_destination.color == BLACK)
                     state.castlingRights &= 0b1110;
                 break;
             default:
                 break;
             }
-
-            state.castlingRights &= 0b1111;
         }
 
         // ORIGIN PIECE
@@ -422,40 +419,27 @@ public:
             state.castlingRights &= 0b0011 << (2 * us);
         }
 
-        // Pawn specialties
-
-        // If there's a pawn moving onto the en passant square, it is guaranteed to be capturing.
-        // Due to the rules of chess, it's not possible for another pawn to move onto the en passant square except for a capture.
         else if (piece_on_origin.piece_type == PAWN)
         {
-            state.halfMoves = 0;
-            if (destination == state.enPassantSquare)
+            if (destination == undo.en_passant_square)
             {
                 int direction = us == WHITE ? -1 : 1;
-                Square piece_captured_square = destination + 8 * direction;
-                Piece piece_captured = getPieceAt(piece_captured_square);
-                undo.captured = piece_captured;
-                unsetPieceAt(piece_captured_square);
+                Square en_passant_pawn_captured_square = destination + 8 * direction;
+                Piece en_passant_pawn_captured = getPieceAt(en_passant_pawn_captured_square);
+                undo.captured = en_passant_pawn_captured;
+                unsetPieceAt(en_passant_pawn_captured_square);
             }
-            else
-            {
-                undo.captured = getPieceAt(destination);
-            }
-        }
-        else
-        {
-            unsetPieceAt(destination);
         }
 
         state.enPassantSquare = 0;
+        unsetPieceAt(destination);
 
-        unsetPieceAt(origin); // is this always done? I believe so...
+        unsetPieceAt(origin);
+        setPieceAt(destination, piece_on_origin);
 
-        // Modify the game state in a unique manner in special circumstances
         switch (flag)
         {
         case NONSPECIAL:
-            setPieceAt(destination, piece_on_origin);
             break;
         case PROMOTION:
             switch (promotion_piece)
@@ -478,7 +462,6 @@ public:
             break;
         case PAWN_DOUBLE_PUSH:
             // this needs to unset the piece one above or one below the en passant square. One above if us == WHITE, opposite otherwise
-            setPieceAt(destination, piece_on_origin);
             {
                 int direction = us == WHITE ? -1 : 1;
                 state.enPassantSquare = destination + (8 * direction);
@@ -491,31 +474,39 @@ public:
              1. determine black/white
              2. determine kingside/queenside
             */
+
             {
                 Square king_square = __builtin_ctzll(state.pieces[us][KING]);
 
                 // int direction = us == WHITE ? -1 : 1;
                 switch (destination - origin)
                 {
-                case 2: // if the king is moving two to the left, e.g. queenside
+                case 2: // if the king is moving two to the right, i.e. kingside
                     if (isSquareThreatened(king_square, them) or isSquareThreatened(king_square - 1, them) or isSquareThreatened(king_square - 2, them))
+                    {
                         unmake(move, undo);
+                        return false;
+                    }
                     else
                     {
                         // king should already be on destination just need to move the rook
                         Square rook_square = destination - 2;
-                        unsetPieceAt(rook_square);
+                        unsetPieceAt(destination + 1);
                         setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
                     }
                     break;
                 case -2: // if the king is moving two to the right, e.g. kingside
                     if (isSquareThreatened(king_square, them) or isSquareThreatened(king_square + 1, them) or isSquareThreatened(king_square + 2, them))
+                    {
                         unmake(move, undo);
+                        return false;
+                    }
+
                     else
                     {
                         // king should already be on destination just need to move the rook
                         Square rook_square = destination + 1;
-                        unsetPieceAt(rook_square);
+                        unsetPieceAt(rook_square - 2);
                         setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
                     }
                     break;
@@ -531,9 +522,10 @@ public:
         if (isSquareThreatened(__builtin_ctzll(state.pieces[us][KING]), them))
         {
             unmake(move, undo);
+            return false;
         }
 
-        return undo; // the trouble: this could return an undo and then unmake even though I've already unmaked.
+        return true;
     }
 
     void unmake(Move move, Undo undo)
@@ -545,19 +537,18 @@ public:
         // std::cout << "\nMailbox: \n"
         //           << getPrintableBoardState(mailbox) << std::endl;
 
-        if (undo.castling_rights & 0xF0) return;
-        // 0b11110000
-        // 0b0000KQkq
-
         // DECONSTRUCT THE MOVE
         // origin and destination are swapped
         Square origin = move & 0x3F;
         Square destination = (move >> 6) & 0x3F;
         u8 promotion_piece = ((move >> 12) & 0x3) + 1; // adds 1 because 0 in Move means knight, but 0 in enum means pawn, which is obviously not a promotion piece
         u8 flag = (move >> 14);
+        Piece piece_on_origin = getPieceAt(origin);
+
+        Side us = piece_on_origin.color;
+        Side them = us == WHITE ? BLACK : WHITE;
 
         // Get pieces at squares in order to determine captures
-        Piece piece_on_origin = getPieceAt(origin);
         if (piece_on_origin.piece_type == EMPTY)
         {
             printf("\n");
@@ -571,14 +562,11 @@ public:
             throw "`unmake()` attempted to move empty piece square.";
         }
 
-        Side us = piece_on_origin.color;
-        Side them = us == WHITE ? BLACK : WHITE;
-
         // ALWAYS DONE
         unsetPieceAt(origin);
 
         // Reset captured piece
-        if (origin == state.enPassantSquare && piece_on_origin.piece_type == PAWN)
+        if (origin == undo.en_passant_square && piece_on_origin.piece_type == PAWN)
         {
             int direction = us == WHITE ? -1 : 1;
             setPieceAt(origin + 8 * direction, undo.captured);
@@ -588,11 +576,6 @@ public:
             if (undo.captured.piece_type != EMPTY)
                 setPieceAt(origin, undo.captured);
         }
-
-        state.enPassantSquare = undo.en_passant_square;
-        state.castlingRights = undo.castling_rights;
-        state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
-        state.fullMoves -= state.sideToPlay == BLACK ? 1 : 0;
 
         // Modify the game state in a unique manner in special circumstances
         switch (flag)
@@ -645,5 +628,12 @@ public:
         default:
             break;
         }
+
+        state.enPassantSquare = undo.en_passant_square;
+        state.castlingRights = undo.castling_rights;
+        state.fullMoves -= state.sideToPlay == WHITE ? 1 : 0;
+        state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
+        state.halfMoves = undo.half_moves;
+        state.fullMoves = undo.full_moves;
     }
 };
