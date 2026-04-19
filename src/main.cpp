@@ -26,7 +26,7 @@ int main()
     gamestate->loadDefaultBoard(); //accurate up to perft 6
     // std::cout << getPrintableBoardState(gamestate->state) << std::endl;
 
-    int perft_depth = 1;
+    int perft_depth = 4;
     auto start = std::chrono::high_resolution_clock::now();
 
 

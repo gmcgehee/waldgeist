@@ -204,17 +204,17 @@ public:
             return 0; // or however you represent "no move"
         }
 
-        for (Move curr_move : move_list.moves)
+        for (int i = 0; i < move_list.count; i++)
         {
             BoardState old_state = gamestate.state;
             Mailbox old_mailbox = gamestate.mailbox;
 
             Undo undo;
 
-            if (gamestate.make(curr_move, undo))
+            if (gamestate.make(move_list.moves[i], undo))
             {
                 node_count += perft(depth - 1);
-                gamestate.unmake(curr_move, undo);
+                gamestate.unmake(move_list.moves[i], undo);
             }
 
             // Temporary for debug

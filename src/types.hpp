@@ -145,6 +145,6 @@ struct Undo
 };
 
 struct MoveList {
-    Move moves[256];
+    Move moves[256]{};
     int count = 0;
 };

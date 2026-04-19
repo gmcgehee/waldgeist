@@ -532,10 +532,10 @@ public:
     {
 
         // Temporary for debug
-        std::cout << "\nBitboards: \n"
-                  << getPrintableBoardState(state) << std::endl;
-        std::cout << "\nMailbox: \n"
-                  << getPrintableBoardState(mailbox) << std::endl;
+        // std::cout << "\nBitboards: \n"
+        //           << getPrintableBoardState(state) << std::endl;
+        // std::cout << "\nMailbox: \n"
+        //           << getPrintableBoardState(mailbox) << std::endl;
 
         // DECONSTRUCT THE MOVE
         // origin and destination are swapped
