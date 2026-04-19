@@ -309,7 +309,7 @@ public:
 
     /// @brief  Moves one piece
     /// @param move A 16-bit integer. Bits 0-5 hold origin, 6-11 hold destination, and 12-16 include special move flags and promotion piece type (not in that order).
-    bool make(Move move, Undo& undo)
+    bool make(Move move, Undo &undo)
     {
 
         // Temporary for debug
@@ -468,53 +468,75 @@ public:
             }
             break;
         case CASTLING:
-            // needs logic to test if the squares in-between are in check and remove castling rights
-            /*
-             Steps:
-             1. determine black/white
-             2. determine kingside/queenside
-            */
 
+        {
+            // Square king_square = __builtin_ctzll(state.pieces[us][KING]); // the king has already been moved to his square
+
+            switch (destination)
             {
-                Square king_square = __builtin_ctzll(state.pieces[us][KING]);
-
-                // int direction = us == WHITE ? -1 : 1;
-                switch (destination - origin)
+            case g1: // if the king is moving two to the right, i.e. kingside
+                if (isSquareThreatened(destination, them) or isSquareThreatened(f1, them) or isSquareThreatened(e1, them))
                 {
-                case 2: // if the king is moving two to the right, i.e. kingside
-                    if (isSquareThreatened(king_square, them) or isSquareThreatened(king_square - 1, them) or isSquareThreatened(king_square - 2, them))
-                    {
-                        unmake(move, undo);
-                        return false;
-                    }
-                    else
-                    {
-                        // king should already be on destination just need to move the rook
-                        Square rook_square = destination - 2;
-                        unsetPieceAt(destination + 1);
-                        setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
-                    }
-                    break;
-                case -2: // if the king is moving two to the right, e.g. kingside
-                    if (isSquareThreatened(king_square, them) or isSquareThreatened(king_square + 1, them) or isSquareThreatened(king_square + 2, them))
-                    {
-                        unmake(move, undo);
-                        return false;
-                    }
-
-                    else
-                    {
-                        // king should already be on destination just need to move the rook
-                        Square rook_square = destination + 1;
-                        unsetPieceAt(rook_square - 2);
-                        setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
-                    }
-                    break;
-                default:
-                    break;
+                    unmake(move, undo);
+                    return false;
                 }
+                else
+                {
+                    // king should already be on destination just need to move the rook
+                    Square rook_square = f1;
+                    unsetPieceAt(h1);
+                    setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                }
+                break;
+            case c1: // if the king is moving two to the right, e.g. kingside
+                if (isSquareThreatened(destination, them) or isSquareThreatened(d1, them) or isSquareThreatened(e1, them))
+                {
+                    unmake(move, undo);
+                    return false;
+                }
+
+                else
+                {
+                    // king should already be on destination just need to move the rook
+                    Square rook_square = destination + 1;
+                    unsetPieceAt(a1);
+                    setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                }
+                break;
+            case g8:
+                if (isSquareThreatened(destination, them) or isSquareThreatened(d8, them) or isSquareThreatened(e8, them))
+                {
+                    unmake(move, undo);
+                    return false;
+                }
+
+                else
+                {
+                    // king should already be on destination just need to move the rook
+                    Square rook_square = f8;
+                    unsetPieceAt(h8);
+                    setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                }
+                break;
+            case c8:
+                if (isSquareThreatened(destination, them) or isSquareThreatened(d8, them) or isSquareThreatened(e8, them))
+                {
+                    unmake(move, undo);
+                    return false;
+                }
+
+                else
+                {
+                    // king should already be on destination just need to move the rook
+                    Square rook_square = d8;
+                    unsetPieceAt(a8);
+                    setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
+                }
+            default:
+                break;
             }
-            break;
+        }
+        break;
         default:
             break;
         }
@@ -593,38 +615,50 @@ public:
         }
         break;
         case CASTLING:
-            // needs logic to test if the squares in-between are in check and remove castling rights
-            /*
-             Steps:
-             1. determine black/white
-             2. determine kingside/queenside
-            */
+
+        {
+            setPieceAt(destination, Piece{KING, us, &state.pieces[us][KING]}); // when un-castling, the king is going to the same place every time
+
+            switch (origin)
             {
-                setPieceAt(destination, Piece{KING, us, &state.pieces[us][KING]});
-                int direction = origin - destination;
-
-                switch (destination - origin)
-                {
-                case -2: // if the king has to move back twice, the rook is currently to his left 1 and needs to be moved right twice
-                {
-                    Square rook_square = origin - 1;
-                    unsetPieceAt(rook_square);
-                    setPieceAt(destination + 2, Piece{ROOK, us, &state.pieces[us][ROOK]});
-                }
-                break;
-                case 2: // if the king has to move forward twice, the rook is currently to his right 1 and needs to be moved left 3 times
-                {
-                    Square rook_square = origin + 1;
-                    unsetPieceAt(rook_square);
-                    setPieceAt(destination - 3, Piece{ROOK, us, &state.pieces[us][ROOK]});
-                }
-                break;
-                default:
-                    break;
-                }
+            case g1: 
+            {
+                Square rook_square = f1;
+                unsetPieceAt(rook_square);
+                setPieceAt(h1, Piece{ROOK, us, &state.pieces[us][ROOK]});
             }
-
             break;
+
+            case c1: 
+            {
+                Square rook_square = d1;
+                unsetPieceAt(rook_square);
+                setPieceAt(a1, Piece{ROOK, us, &state.pieces[us][ROOK]});
+            }
+            break;
+
+            case g8: 
+            {
+                Square rook_square = f8;
+                unsetPieceAt(rook_square);
+                setPieceAt(h8, Piece{ROOK, us, &state.pieces[us][ROOK]});
+            }
+            break;
+
+            case c8:
+            {
+                Square rook_square = d8;
+                unsetPieceAt(rook_square);
+                setPieceAt(a8, Piece{ROOK, us, &state.pieces[us][ROOK]});
+            }
+            break;
+
+            default:
+                break;
+            }
+        }
+
+        break;
         default:
             break;
         }
