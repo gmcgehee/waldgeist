@@ -26,25 +26,24 @@ int main()
     gamestate->loadDefaultBoard(); //accurate up to perft 6
     // std::cout << getPrintableBoardState(gamestate->state) << std::endl;
 
-    int perft_depth = 4;
+    int perft_depth = 6;
     auto start = std::chrono::high_resolution_clock::now();
 
-
-    unsigned long long move_count;
+    unsigned long long node_count;
     int trial_count = 1;
     for (int i = 0; i < trial_count; i++)
-        move_count = engine->perft(perft_depth);
-    
+        node_count = engine->perft(perft_depth);
+
     auto end = std::chrono::high_resolution_clock::now();
 
-
-    std::cout << "Move count at PERFT " << perft_depth << ": " << move_count << std::endl;
+    std::cout << "Move count at PERFT " << perft_depth << ": " << node_count << std::endl;
 
     auto duration = duration_cast<std::chrono::nanoseconds>(end - start);
+    auto sec = std::chrono::duration_cast<std::chrono::seconds>(duration);
 
-    std::cout << "Total Elapsed time: " << duration.count() << "ns\n";
-    std::cout << "Average time per trial: " << duration.count() / trial_count << " ns\n";
-
+    std::cout << "Total Elapsed time: " << sec.count() << "s\n";
+    std::cout << "Average time per node: " << duration.count() / node_count << " ns\n";
+    std::cout << "Nodes per second: " << node_count / sec.count() << " nodes/s\n";
 
     return 0;
 }
