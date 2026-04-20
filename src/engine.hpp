@@ -200,11 +200,11 @@ public:
         if (depth == 0)
             return 1;
 
-        if (hasDuplicates(move_list))
-        {
-            std::cout << getPrintableBoardState(gamestate.state) << '\n';
-            throw "Duplicate moves present";
-        }
+        // if (hasDuplicates(move_list))
+        // {
+        //     std::cout << getPrintableBoardState(gamestate.state) << '\n';
+        //     throw "Duplicate moves present";
+        // }
 
         if (depth == 1)
         {
@@ -238,13 +238,13 @@ public:
                 gamestate.unmake(current_move, undo);
             }
 
-            if (check_for_disparities(old_state, gamestate.state, old_mailbox, gamestate.mailbox))
-            {
-                std::cout << "There were disparities\n";
-                std::cout << getPrintableBoardState(old_state) << "\n\n";
-                std::cout << getPrintableBoardState(gamestate.state) << '\n';
-                throw "Disparities";
-            }
+            // if (check_for_disparities(old_state, gamestate.state, old_mailbox, gamestate.mailbox))
+            // {
+            //     std::cout << "There were disparities\n";
+            //     std::cout << getPrintableBoardState(old_state) << "\n\n";
+            //     std::cout << getPrintableBoardState(gamestate.state) << '\n';
+            //     throw "Disparities";
+            // }
         }
 
         return node_count;

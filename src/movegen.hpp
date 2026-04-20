@@ -152,7 +152,7 @@ namespace MoveGeneration
             {
                 square = pop_lsb(one_push);
 
-                if (square >= h8)
+                if (square >= a8)
                 {
                     for (int piece = 0; piece < KING - 1; piece++)
                     {
@@ -423,8 +423,8 @@ namespace MoveGeneration
     {
 
         generatePawnCaptures(their_state, our_p_state, us, en_passant_square, move_list);
-        generatePawnPushes(empty, our_p_state, us, move_list);
         generateKnightCaptures(their_state, our_n_state, move_list);
+        generatePawnPushes(empty, our_p_state, us, move_list);
         generateKnightQuiets(empty, our_n_state, move_list);
         generateBishopMoves(occ, empty, their_state, our_b_state, move_list);
         generateRookMoves(occ, empty, their_state, our_r_state, move_list);

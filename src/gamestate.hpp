@@ -444,8 +444,9 @@ public:
             setPieceAt(destination, piece_on_origin);
             break;
         case PROMOTION:
+        // TEMP FOR DEBUG
+        if (getPieceAt(origin).piece_type == PAWN) throw "this piece shouldn't be a pawn anymore";
             switch (promotion_piece)
-
             {
             case KNIGHT:
                 setPieceAt(destination, Piece{KNIGHT, us, &state.pieces[us][KNIGHT]});

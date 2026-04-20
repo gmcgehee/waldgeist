@@ -21,7 +21,7 @@ int main()
 
     GameState *gamestate = &engine->gamestate;
 
-    gamestate->loadFromFen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ");
+    gamestate->loadFromFen("8/2PP4/8/1Kb1N3/8/7k/5p2/8 w - - 0 1"); // failing on black pawn promotions
     // gamestate->loadDefaultBoard(); // accurate up to perft 6
     std::cout << "Bitboards Original Rep: \n";
     std::cout << getPrintableBoardState(gamestate->state) << '\n';
