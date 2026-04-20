@@ -6,6 +6,7 @@
 #include "bitboard.hpp"
 #include "gamestate.hpp"
 #include "movegen.hpp"
+#include "debug.hpp"
 
 class Engine
 {
@@ -199,6 +200,12 @@ public:
         if (depth == 0)
             return 1;
 
+        if (hasDuplicates(move_list))
+        {
+            std::cout << getPrintableBoardState(gamestate.state) << '\n';
+            throw "Duplicate moves present";
+        }
+
         if (depth == 1)
         {
             for (int i = 0; i < move_list.count; i++)
@@ -213,15 +220,14 @@ public:
                     node_count++;
                     gamestate.unmake(current_move, undo);
                 }
-
             }
             return node_count;
         }
 
         for (int i = 0; i < move_list.count; i++)
         {
-            // BoardState old_state = gamestate.state;
-            // Mailbox old_mailbox = gamestate.mailbox;
+            BoardState old_state = gamestate.state;
+            Mailbox old_mailbox = gamestate.mailbox;
             const Move current_move = move_list.moves[i];
 
             Undo undo;
@@ -232,7 +238,13 @@ public:
                 gamestate.unmake(current_move, undo);
             }
 
-            // check_for_disparities(old_state, gamestate.state, old_mailbox, gamestate.mailbox);
+            if (check_for_disparities(old_state, gamestate.state, old_mailbox, gamestate.mailbox))
+            {
+                std::cout << "There were disparities\n";
+                std::cout << getPrintableBoardState(old_state) << "\n\n";
+                std::cout << getPrintableBoardState(gamestate.state) << '\n';
+                throw "Disparities";
+            }
         }
 
         return node_count;

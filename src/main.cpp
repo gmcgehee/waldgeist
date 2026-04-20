@@ -21,9 +21,12 @@ int main()
 
     GameState *gamestate = &engine->gamestate;
 
-    // gamestate->loadFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
-    gamestate->loadDefaultBoard(); // accurate up to perft 6
+    gamestate->loadFromFen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1 ");
+    // gamestate->loadDefaultBoard(); // accurate up to perft 6
+    std::cout << "Bitboards Original Rep: \n";
     std::cout << getPrintableBoardState(gamestate->state) << '\n';
+    std::cout << "\nMailbox Original Rep: \n";
+    std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
 
     // Move castling_move = 0b1100111100111010;
 
@@ -34,13 +37,10 @@ int main()
     // std::cout << '\n' << getPrintableBoardState(gamestate->state) << '\n';
     // return 0;
 
-    int perft_depth = 7;
+    int perft_depth = 6;
     auto start = std::chrono::steady_clock::now();
 
-    unsigned long long node_count = 0;
-    int trial_count = 1;
-    for (int i = 0; i < trial_count; i++)
-        node_count = engine->perft(perft_depth);
+    unsigned long long node_count = engine->perft(perft_depth);
 
     auto end = std::chrono::steady_clock::now();
 

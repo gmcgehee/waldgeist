@@ -188,7 +188,7 @@ namespace MoveGeneration
                 {
                     for (int piece = 0; piece < KING - 1; piece++)
                     {
-                        Move move = convertToMove(square, square - 8, (PieceType)piece, PROMOTION);
+                        Move move = convertToMove(square, square + 8, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
                     }
                     break;

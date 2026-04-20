@@ -432,17 +432,20 @@ public:
         }
 
         state.enPassantSquare = 0;
-        unsetPieceAt(destination);
+
+        if (piece_on_destination.piece_type != EMPTY)
+            unsetPieceAt(destination);
 
         unsetPieceAt(origin);
-        setPieceAt(destination, piece_on_origin);
 
         switch (flag)
         {
         case NONSPECIAL:
+            setPieceAt(destination, piece_on_origin);
             break;
         case PROMOTION:
             switch (promotion_piece)
+
             {
             case KNIGHT:
                 setPieceAt(destination, Piece{KNIGHT, us, &state.pieces[us][KNIGHT]});
@@ -457,12 +460,14 @@ public:
                 setPieceAt(destination, Piece{QUEEN, us, &state.pieces[us][QUEEN]});
                 break;
             default:
+                throw "This should NEVER be running in promotion. Something funky is going on.";
                 break;
             }
             break;
         case PAWN_DOUBLE_PUSH:
             // this needs to unset the piece one above or one below the en passant square. One above if us == WHITE, opposite otherwise
             {
+                setPieceAt(destination, piece_on_origin);
                 int direction = us == WHITE ? -1 : 1;
                 state.enPassantSquare = destination + (8 * direction);
             }
@@ -471,7 +476,7 @@ public:
 
         {
             // Square king_square = __builtin_ctzll(state.pieces[us][KING]); // the king has already been moved to his square
-
+            setPieceAt(destination, piece_on_origin);
             switch (destination)
             {
             case g1: // if the king is moving two to the right, i.e. kingside
@@ -532,7 +537,9 @@ public:
                     unsetPieceAt(a8);
                     setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
                 }
+                break;
             default:
+                throw "Invalid Move flag";
                 break;
             }
         }
@@ -621,7 +628,7 @@ public:
 
             switch (origin)
             {
-            case g1: 
+            case g1:
             {
                 Square rook_square = f1;
                 unsetPieceAt(rook_square);
@@ -629,7 +636,7 @@ public:
             }
             break;
 
-            case c1: 
+            case c1:
             {
                 Square rook_square = d1;
                 unsetPieceAt(rook_square);
@@ -637,7 +644,7 @@ public:
             }
             break;
 
-            case g8: 
+            case g8:
             {
                 Square rook_square = f8;
                 unsetPieceAt(rook_square);
@@ -654,12 +661,14 @@ public:
             break;
 
             default:
+                throw "Invalid castling square.";
                 break;
             }
         }
 
         break;
         default:
+            throw "Invalid move flag";
             break;
         }
 
