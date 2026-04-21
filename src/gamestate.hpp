@@ -416,6 +416,7 @@ public:
 
         else if (piece_on_origin.piece_type == KING)
         {
+            //                      0bKQkq
             state.castlingRights &= 0b0011 << (2 * us);
         }
 
@@ -444,8 +445,7 @@ public:
             setPieceAt(destination, piece_on_origin);
             break;
         case PROMOTION:
-        // TEMP FOR DEBUG
-        if (getPieceAt(origin).piece_type == PAWN) throw "this piece shouldn't be a pawn anymore";
+            // TEMP FOR DEBUG
             switch (promotion_piece)
             {
             case KNIGHT:
@@ -466,17 +466,15 @@ public:
             }
             break;
         case PAWN_DOUBLE_PUSH:
-            // this needs to unset the piece one above or one below the en passant square. One above if us == WHITE, opposite otherwise
-            {
-                setPieceAt(destination, piece_on_origin);
-                int direction = us == WHITE ? -1 : 1;
-                state.enPassantSquare = destination + (8 * direction);
-            }
-            break;
+        {
+            setPieceAt(destination, piece_on_origin);
+            int direction = us == WHITE ? -1 : 1;
+            state.enPassantSquare = destination + (8 * direction);
+        }
+        break;
         case CASTLING:
 
         {
-            // Square king_square = __builtin_ctzll(state.pieces[us][KING]); // the king has already been moved to his square
             setPieceAt(destination, piece_on_origin);
             switch (destination)
             {
@@ -503,14 +501,14 @@ public:
 
                 else
                 {
-                    // king should already be on destination just need to move the rook
                     Square rook_square = destination + 1;
                     unsetPieceAt(a1);
                     setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
+
                 }
                 break;
             case g8:
-                if (isSquareThreatened(destination, them) or isSquareThreatened(d8, them) or isSquareThreatened(e8, them))
+                if (isSquareThreatened(destination, them) or isSquareThreatened(f8, them) or isSquareThreatened(e8, them))
                 {
                     unmake(move, undo);
                     return false;
