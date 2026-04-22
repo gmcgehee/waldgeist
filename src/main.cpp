@@ -8,14 +8,25 @@
 #include "tables.hpp"
 #include "movegen.hpp"
 #include "engine.hpp"
+#include "uci.hpp"
 
 #include "debug.hpp"
 
 // temporary
 #include <chrono>
 
-int main()
+int main(int argc, char** argv)
 {
+
+    if (argc > 0) {
+        
+        std::string arg1 = argv[1];
+
+        if (arg1 == "uci") {
+            UCI();
+            return 0;
+        }
+    }
 
     Engine *engine = new Engine();
 
