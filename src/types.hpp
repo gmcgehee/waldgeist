@@ -102,7 +102,8 @@ enum BoardSquares : Square
     e8,
     f8,
     g8,
-    h8
+    h8,
+    OUT_OF_BOUNDS
 };
 
 struct Piece

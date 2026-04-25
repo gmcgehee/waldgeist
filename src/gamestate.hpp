@@ -47,7 +47,7 @@ public:
         }
 
         state.castlingRights = 0U;
-        state.enPassantSquare = 0U;
+        state.enPassantSquare = OUT_OF_BOUNDS;
 
         state.halfMoves = 0U;
         state.fullMoves = 0U;
@@ -194,7 +194,7 @@ public:
 
                 if (c == '-')
                 {
-                    state.enPassantSquare = 0;
+                    state.enPassantSquare = OUT_OF_BOUNDS;
                     continue;
                 }
 
@@ -205,8 +205,10 @@ public:
                     square += fen[i + 1]; // the cleanest way to add two chars to a string
                     int index = squareToIndex(square);
 
-                    state.enPassantSquare = index; // this will be 63 if the square is a8 and 0 if it is h1
-                }
+                    if ((index >= a3 and index < h3) or (index >= a6 and index <= h6))
+                        state.enPassantSquare = index; // this will be 63 if the square is a8 and 0 if it is h1
+                    else state.enPassantSquare = OUT_OF_BOUNDS;
+                    }
             }
             else if (fieldnumber == 4)
             {
@@ -432,7 +434,7 @@ public:
             }
         }
 
-        state.enPassantSquare = 0;
+        state.enPassantSquare = OUT_OF_BOUNDS;
 
         if (piece_on_destination.piece_type != EMPTY)
             unsetPieceAt(destination);
