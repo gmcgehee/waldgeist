@@ -32,23 +32,23 @@ int main(int argc, char** argv)
 
     GameState *gamestate = &engine->gamestate;
 
-    gamestate->loadFromFen("r3k2b/1bP3P1/8/8/8/8/8/R3K3 w Qq - 0 1"); // failing on pawn promotions where pawncount > 1 on a side
+    gamestate->loadFromFen("8/8/4k3/1K6/8/8/3p2p1/8 b - - 0 1"); // failing on pawn promotions where pawncount > 1 on a side
     // gamestate->loadDefaultBoard(); // accurate up to perft 6
     
     // print_bb(ROOK_PEXT_TABLES[a5][37]);
     
-    std::cout << "Bitboards Original Rep: \n";
+    std::cout << "Original Rep: \n";
     std::cout << getPrintableBoardState(gamestate->state) << '\n';
-    std::cout << "\nMailbox Original Rep: \n";
-    std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
+    // std::cout << "\nMailbox Original Rep: \n";
+    // std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
 
-    std::cout << "Bitboards Qcastling Rep: \n";
-    std::cout << getPrintableBoardState(gamestate->state) << '\n';
-    std::cout << "\nMailbox QCastling Rep: \n";
-    std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
+    // std::cout << "Bitboards Qcastling Rep: \n";
+    // std::cout << getPrintableBoardState(gamestate->state) << '\n';
+    // std::cout << "\nMailbox QCastling Rep: \n";
+    // std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
 
 
-    int perft_depth = 6;
+    int perft_depth = 1;
     auto start = std::chrono::steady_clock::now();
 
     unsigned long long node_count = engine->perft(perft_depth);

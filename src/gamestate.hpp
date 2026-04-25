@@ -313,7 +313,7 @@ public:
     {
 
         // Temporary for debug
-        // std::cout << "\nBitboards: \n"
+        // std::cout << "\nGamestate: \n"
         //           << getPrintableBoardState(state) << '\n';
         // std::cout << "\nMailbox: \n"
         //           << getPrintableBoardState(mailbox) << '\n';

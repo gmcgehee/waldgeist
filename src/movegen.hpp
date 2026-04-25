@@ -66,7 +66,7 @@ namespace MoveGeneration
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
                     }
-                    break;
+                    continue;
                 }
                 Move move = convertToMove(destination, origin);
                 move_list.moves[move_list.count++] = move;
@@ -85,7 +85,7 @@ namespace MoveGeneration
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
                     }
-                    break;
+                    continue;
                 }
                 Move move = convertToMove(destination, origin);
                 move_list.moves[move_list.count++] = move;
@@ -107,7 +107,7 @@ namespace MoveGeneration
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
                     }
-                    break;
+                    continue;
                 }
                 Move move = convertToMove(destination, origin);
                 move_list.moves[move_list.count++] = move;
@@ -126,7 +126,7 @@ namespace MoveGeneration
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
                     }
-                    break;
+                    continue;
                 }
                 Move move = convertToMove(destination, origin);
                 move_list.moves[move_list.count++] = move;
@@ -159,7 +159,7 @@ namespace MoveGeneration
                         Move move = convertToMove(square, square - 8, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
                     }
-                    break;
+                    continue;
                 }
                 move = convertToMove(square, square - 8);
                 move_list.moves[move_list.count++] = move;
@@ -191,7 +191,7 @@ namespace MoveGeneration
                         Move move = convertToMove(square, square + 8, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
                     }
-                    break;
+                    continue;
                 }
 
                 move = convertToMove(square, square + 8);
