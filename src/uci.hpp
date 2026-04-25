@@ -4,6 +4,7 @@
 #include <cassert>
 #include <format>
 #include <sstream>
+#include <chrono>
 
 #include "gamestate.hpp"
 #include "bitboard.hpp"
@@ -82,8 +83,20 @@ void UCI()
                             if (args.size() == 3)
                             {
                                 int perft_depth = std::stoi(args[2]);
+                                auto start = std::chrono::steady_clock::now();
+
                                 unsigned long long node_count = engine->perft(perft_depth);
-                                std::cout << node_count << " nodes \n";
+
+                                auto end = std::chrono::steady_clock::now();
+
+                                auto duration = end - start;
+                                double seconds = std::chrono::duration<double>(duration).count();
+                                double nanoseconds = std::chrono::duration<double, std::nano>(duration).count();
+
+                                std::cout << "\nMove count at PERFT " << perft_depth << ": " << node_count << '\n';
+                                std::cout << "Total elapsed time: " << seconds << " s\n";
+                                std::cout << "Average time per node: " << (nanoseconds / node_count) << " ns\n";
+                                std::cout << "Nodes per second: " << (node_count / seconds) << " nodes/s\n\n";
                             }
                         }
                     }
@@ -98,8 +111,9 @@ void UCI()
                     continue;
                 }
             }
-        } 
-        catch (std::exception& e) {
+        }
+        catch (std::exception &e)
+        {
             std::cout << "\nOops! That had a bug. Please try again.\n";
         }
     }
