@@ -274,7 +274,7 @@ std::string exportFen(BoardState state)
     // En passant square
     std::string enPassantSquare;
 
-    if (state.enPassantSquare <= 63)
+    if ((state.enPassantSquare >= a3 and state.enPassantSquare <= h3) or (state.enPassantSquare >= a6 and state.enPassantSquare <= h6))
         enPassantSquare = indexToSquare(state.enPassantSquare);
     else
         enPassantSquare = "-";

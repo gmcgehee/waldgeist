@@ -313,8 +313,8 @@ public:
     {
 
         // Temporary for debug
-        // std::cout << "\nGamestate: \n"
-        //           << getPrintableBoardState(state) << '\n';
+        std::cout << "\nState before make: \n"
+                  << getPrintableBoardState(state) << '\n';
         // std::cout << "\nMailbox: \n"
         //           << getPrintableBoardState(mailbox) << '\n';
 
@@ -560,7 +560,7 @@ public:
     {
 
         // Temporary for debug
-        // std::cout << "\nBitboards: \n"
+        // std::cout << "\nCurrent State: \n"
         //           << getPrintableBoardState(state) << '\n';
         // std::cout << "\nMailbox: \n"
         //           << getPrintableBoardState(mailbox) << '\n';

@@ -219,6 +219,8 @@ public:
 
                 if (gamestate.make(current_move, undo))
                 {
+                    std::cout << "\nCurrent State: \n"
+                              << getPrintableBoardState(gamestate.state) << '\n';
                     node_count++;
                     gamestate.unmake(current_move, undo);
                 }
