@@ -181,7 +181,7 @@ public:
                 }
                 else if (c == '-')
                 {
-                    state.castlingRights = 128;
+                    state.castlingRights = 0;
                 }
                 else
                 {
