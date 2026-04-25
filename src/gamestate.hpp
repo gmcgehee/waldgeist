@@ -368,19 +368,19 @@ public:
             {
             case (a1):
                 if (piece_on_destination.color == WHITE)
-                    state.castlingRights &= 0b0111;
+                    state.castlingRights &= 0b1011;
                 break;
             case (h1):
                 if (piece_on_destination.color == WHITE)
-                    state.castlingRights &= 0b1011;
+                    state.castlingRights &= 0b0111;
                 break;
             case (a8):
                 if (piece_on_destination.color == BLACK)
-                    state.castlingRights &= 0b1101;
+                    state.castlingRights &= 0b1110;
                 break;
             case (h8):
                 if (piece_on_destination.color == BLACK)
-                    state.castlingRights &= 0b1110;
+                    state.castlingRights &= 0b1101;
                 break;
             default:
                 break;
@@ -395,19 +395,19 @@ public:
             {
             case (a1):
                 if (piece_on_origin.color == WHITE)
-                    state.castlingRights &= 0b0111;
+                    state.castlingRights &= 0b1011;
                 break;
             case (h1):
                 if (piece_on_origin.color == WHITE)
-                    state.castlingRights &= 0b1011;
+                    state.castlingRights &= 0b0111;
                 break;
             case (a8):
                 if (piece_on_origin.color == BLACK)
-                    state.castlingRights &= 0b1101;
+                    state.castlingRights &= 0b1110;
                 break;
             case (h8):
                 if (piece_on_origin.color == BLACK)
-                    state.castlingRights &= 0b1110;
+                    state.castlingRights &= 0b1101;
                 break;
             default:
                 break;
@@ -416,7 +416,7 @@ public:
 
         else if (piece_on_origin.piece_type == KING)
         {
-            //                      0bKQkq
+            //                      0bKQkq      (0 or 1)
             state.castlingRights &= 0b0011 << (2 * us);
         }
 

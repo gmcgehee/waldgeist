@@ -18,10 +18,10 @@
 int main(int argc, char** argv)
 {
 
-    if (argc > 0) {
+    if (argc > 1) {
         
         std::string arg1 = argv[1];
-
+        
         if (arg1 == "uci") {
             UCI();
             return 0;
@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 
     GameState *gamestate = &engine->gamestate;
 
-    gamestate->loadFromFen("7b/4k3/8/8/8/8/8/R3K3 w Q - 0 1"); // failing on pawn promotions where pawncount > 1 on a side
+    gamestate->loadFromFen("r3k2b/1bP3P1/8/8/8/8/8/R3K3 w Qq - 0 1"); // failing on pawn promotions where pawncount > 1 on a side
     // gamestate->loadDefaultBoard(); // accurate up to perft 6
     
     // print_bb(ROOK_PEXT_TABLES[a5][37]);
@@ -42,24 +42,11 @@ int main(int argc, char** argv)
     std::cout << "\nMailbox Original Rep: \n";
     std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
 
-    Undo undo;
-
-    gamestate->make(MoveGeneration::convertToMove(c1, e1, PAWN, CASTLING), undo);
-    gamestate->unmake(MoveGeneration::convertToMove(c1, e1, PAWN, CASTLING), undo);
-
     std::cout << "Bitboards Qcastling Rep: \n";
     std::cout << getPrintableBoardState(gamestate->state) << '\n';
     std::cout << "\nMailbox QCastling Rep: \n";
     std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
 
-    // Move castling_move = 0b1100111100111010;
-
-    // Undo undo;
-    // gamestate->make(castling_move, undo);
-    // gamestate->unmake(castling_move, undo);
-
-    // std::cout << '\n' << getPrintableBoardState(gamestate->state) << '\n';
-    // return 0;
 
     int perft_depth = 6;
     auto start = std::chrono::steady_clock::now();

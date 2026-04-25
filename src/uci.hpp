@@ -63,7 +63,9 @@ void UCI()
                         }
                         else if (args[1] == "fen")
                         {
-                            gamestate->loadFromFen(command.substr(14, command.size() - 14));
+                            std::string fen_string = command.substr(13, command.size() - 13);
+                            std::cout << fen_string << '\n';
+                            gamestate->loadFromFen(fen_string);
                         }
                     }
                 }
