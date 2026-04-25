@@ -313,8 +313,8 @@ public:
     {
 
         // Temporary for debug
-        std::cout << "\nState before make: \n"
-                  << getPrintableBoardState(state) << '\n';
+        // std::cout << "\nState before make: \n"
+        //           << getPrintableBoardState(state) << '\n';
         // std::cout << "\nMailbox: \n"
         //           << getPrintableBoardState(mailbox) << '\n';
 
@@ -445,25 +445,7 @@ public:
             setPieceAt(destination, piece_on_origin);
             break;
         case PROMOTION:
-            // TEMP FOR DEBUG
-            switch (promotion_piece)
-            {
-            case KNIGHT:
-                setPieceAt(destination, Piece{KNIGHT, us, &state.pieces[us][KNIGHT]});
-                break;
-            case BISHOP:
-                setPieceAt(destination, Piece{BISHOP, us, &state.pieces[us][BISHOP]});
-                break;
-            case ROOK:
-                setPieceAt(destination, Piece{ROOK, us, &state.pieces[us][ROOK]});
-                break;
-            case QUEEN:
-                setPieceAt(destination, Piece{QUEEN, us, &state.pieces[us][QUEEN]});
-                break;
-            default:
-                throw "This should NEVER be running in promotion. Something funky is going on.";
-                break;
-            }
+            setPieceAt(destination, Piece{(PieceType)promotion_piece, us, &state.pieces[us][(PieceType)promotion_piece]});
             break;
         case PAWN_DOUBLE_PUSH:
         {
