@@ -159,9 +159,67 @@ public:
 
     unsigned long long perft(int depth)
     {
+        unsigned long long node_count = 0;
+
+        Bitboard occ = gamestate.getFullState();
+        Bitboard empty = ~occ;
+
+        Side us = gamestate.state.sideToPlay;
+        Side them = (us == WHITE) ? BLACK : WHITE;
+
+        Bitboard our_state = gamestate.getSideState(us);
+        Bitboard their_state = gamestate.getSideState(them);
+
+        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
+        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
+        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
+        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
+        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
+        Bitboard our_k_state = gamestate.state.pieces[us][KING];
+
+        u8 castling_rights = gamestate.state.castlingRights;
+        Square en_passant_square = gamestate.state.enPassantSquare;
+
+        MoveList move_list;
+
+        MoveGeneration::generateAllMoves(
+            occ,
+            empty,
+            their_state,
+            us,
+            our_p_state,
+            our_n_state,
+            our_b_state,
+            our_r_state,
+            our_q_state,
+            our_k_state,
+            castling_rights,
+            en_passant_square,
+            move_list);
+
+        for (int i = 0; i < move_list.count; i++)
+        {
+            BoardState old_state = gamestate.state;
+            Mailbox old_mailbox = gamestate.mailbox;
+            const Move current_move = move_list.moves[i];
+
+            Undo undo;
+
+            if (gamestate.make(current_move, undo))
+            {
+                unsigned long long curr_move_node_count = perft_recursion(depth - 1);
+                std::cout << MoveGeneration::moveToString(current_move) << ": " << curr_move_node_count << '\n';
+                node_count += curr_move_node_count;
+                gamestate.unmake(current_move, undo);
+            }
+        }
+        return node_count;
+    }
+
+    unsigned long long perft_recursion(int depth)
+    {
 
         unsigned long long node_count = 0;
-        int depth_0_count = 0;
 
         Bitboard occ = gamestate.getFullState();
         Bitboard empty = ~occ;
@@ -219,8 +277,7 @@ public:
 
                 if (gamestate.make(current_move, undo))
                 {
-                    std::cout << "\nCurrent State: \n"
-                              << getPrintableBoardState(gamestate.state) << '\n';
+
                     node_count++;
                     gamestate.unmake(current_move, undo);
                 }
@@ -238,7 +295,7 @@ public:
 
             if (gamestate.make(current_move, undo))
             {
-                node_count += perft(depth - 1);
+                node_count += perft_recursion(depth - 1);
                 gamestate.unmake(current_move, undo);
             }
 
