@@ -15,6 +15,37 @@
 namespace MoveGeneration
 {
 
+    std::string moveToString(Move move)
+    {
+        Square destination = move & 0x3F;
+        Square origin = (move >> 6) & 0x3F;
+        u8 promotion_piece = ((move >> 12) & 0x3) + 1;
+        u8 flag = (move >> 14);
+
+        std::string move_string = indexToSquare(origin) + indexToSquare(destination);
+        if (flag == PROMOTION)
+        {
+            switch (promotion_piece)
+            {
+            case KNIGHT:
+                move_string += 'n';
+                break;
+            case BISHOP:
+                move_string += 'b';
+                break;
+            case ROOK:
+                move_string += 'r';
+                break;
+            case QUEEN:
+                move_string += 'q';
+                break;
+            default:
+                break;
+            }
+        }
+        return move_string;
+    }
+
     inline Move convertToMove(Square destination, Square origin, PieceType promotion_piece = PAWN, SpecialMoveFlag flag = NONSPECIAL)
     {
 
@@ -46,7 +77,7 @@ namespace MoveGeneration
         Square origin;
         Square destination;
 
-        if (en_passant_square > 0) // the en passant square will never be a1
+        if (en_passant_square != OUT_OF_BOUNDS) 
         {
             set_bit(their_state, en_passant_square); // en passant is accounted for in make--no need to make a special move flag
         }
@@ -61,7 +92,7 @@ namespace MoveGeneration
                 origin = destination - 9;
                 if (destination >= a8)
                 {
-                    for (int piece = 0; piece < KING - 1; piece++)
+                    for (int piece = KING - 2; piece >= 0; piece--)
                     {
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
@@ -80,7 +111,7 @@ namespace MoveGeneration
                 origin = destination - 7;
                 if (destination >= a8)
                 {
-                    for (int piece = 0; piece < KING - 1; piece++)
+                    for (int piece = KING - 2; piece >= 0; piece--)
                     {
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
@@ -102,7 +133,7 @@ namespace MoveGeneration
                 origin = destination + 7;
                 if (destination <= h1)
                 {
-                    for (int piece = 0; piece < KING - 1; piece++)
+                    for (int piece = KING - 2; piece >= 0; piece--)
                     {
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
@@ -121,7 +152,7 @@ namespace MoveGeneration
                 origin = destination + 9;
                 if (destination <= h1)
                 {
-                    for (int piece = 0; piece < KING - 1; piece++)
+                    for (int piece = KING - 2; piece >= 0; piece--)
                     {
                         Move move = convertToMove(destination, origin, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
@@ -154,7 +185,7 @@ namespace MoveGeneration
 
                 if (square >= a8)
                 {
-                    for (int piece = 0; piece < KING - 1; piece++)
+                    for (int piece = KING - 2; piece >= 0; piece--)
                     {
                         Move move = convertToMove(square, square - 8, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
@@ -186,7 +217,7 @@ namespace MoveGeneration
 
                 if (square <= h1)
                 {
-                    for (int piece = 0; piece < KING - 1; piece++)
+                    for (int piece = KING - 2; piece >= 0; piece--)
                     {
                         Move move = convertToMove(square, square + 8, (PieceType)piece, PROMOTION);
                         move_list.moves[move_list.count++] = move;
