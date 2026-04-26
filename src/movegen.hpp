@@ -77,7 +77,7 @@ namespace MoveGeneration
         Square origin;
         Square destination;
 
-        if (en_passant_square != OUT_OF_BOUNDS) 
+        if (en_passant_square != OUT_OF_BOUNDS)
         {
             set_bit(their_state, en_passant_square); // en passant is accounted for in make--no need to make a special move flag
         }
@@ -303,8 +303,23 @@ namespace MoveGeneration
         }
     }
 
-    // NOTE: currently unused
-    void generateBishopCaptures(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state, MoveList &move_list);
+    void generateBishopCaptures(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state, MoveList &move_list)
+    {
+        while (our_b_state)
+        {
+            Square origin = pop_lsb(our_b_state);
+            int pext_index = (int)_pext_u64(occ, BISHOP_RAY_MASKS[origin]);
+            Bitboard moves = BISHOP_PEXT_TABLES[origin][pext_index];
+            Bitboard captures = moves & their_state;
+
+            while (captures)
+            {
+                Square destination = pop_lsb(captures);
+                Move move = convertToMove(destination, origin);
+                move_list.moves[move_list.count++] = move;
+            }
+        }
+    }
 
     // NOTE: currently unused
     void generateBishopQuiets(Bitboard empty, Bitboard our_b_state, MoveList &move_list);
@@ -336,8 +351,25 @@ namespace MoveGeneration
         }
     }
 
-    // NOTE: currently unused
-    void generateRookCaptures(Bitboard empty, Bitboard our_r_state, MoveList &move_list);
+    void generateRookCaptures(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_r_state, MoveList &move_list)
+    {
+        while (our_r_state)
+        {
+            Square origin = pop_lsb(our_r_state);
+            int pext_index = (int)_pext_u64(occ, ROOK_RAY_MASKS[origin]);
+            Bitboard moves = ROOK_PEXT_TABLES[origin][pext_index];
+            Bitboard captures = moves & their_state;
+            Bitboard quiets = moves & empty;
+
+            while (captures)
+            {
+                Square destination = pop_lsb(captures);
+                Move move = convertToMove(destination, origin);
+                move_list.moves[move_list.count++] = move;
+            }
+
+        }
+    }
 
     // NOTE: currently unused
     void generateRookQuiets(Bitboard empty, Bitboard our_r_state, MoveList &move_list);
@@ -372,7 +404,27 @@ namespace MoveGeneration
     }
 
     // NOTE: currently unused
-    void generateQueenCaptures(Bitboard their_state, Bitboard our_q_state, MoveList &move_list);
+    void generateQueenCaptures(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_q_state, MoveList &move_list)
+    {
+
+        while (our_q_state)
+        {
+            Square origin = pop_lsb(our_q_state);
+            int line_pext_index = (int)_pext_u64(occ, ROOK_RAY_MASKS[origin]);
+            int diag_pext_index = (int)_pext_u64(occ, BISHOP_RAY_MASKS[origin]);
+
+            Bitboard moves = ROOK_PEXT_TABLES[origin][line_pext_index] | BISHOP_PEXT_TABLES[origin][diag_pext_index];
+            Bitboard captures = moves & their_state;
+            Bitboard quiets = moves & empty;
+
+            while (captures)
+            {
+                Square destination = pop_lsb(captures);
+                Move move = convertToMove(destination, origin);
+                move_list.moves[move_list.count++] = move;
+            }
+        }
+    }
 
     // NOTE: currently unused
     void generateQueenQuiets(Bitboard empty, Bitboard our_q_state, MoveList &move_list);
@@ -381,11 +433,11 @@ namespace MoveGeneration
     {
 
         Square origin = __builtin_ctzll(our_k_state); // no need to pop lsb and modify k state
-        Bitboard king_squares = KING_MOVES[origin] & their_state;
+        Bitboard king_captures = KING_MOVES[origin] & their_state;
 
-        while (king_squares)
+        while (king_captures)
         {
-            Square destination = pop_lsb(king_squares);
+            Square destination = pop_lsb(king_captures);
             Move move = convertToMove(destination, origin);
             move_list.moves[move_list.count++] = move;
         }
@@ -473,9 +525,9 @@ namespace MoveGeneration
 
         generatePawnCaptures(their_state, our_p_state, us, en_passant_square, move_list);
         generateKnightCaptures(their_state, our_n_state, move_list);
-        // append_moves(generateBishopCaptures(occ, empty, their_state, our_b_state));
-        // append_moves(generateRookCaptures(occ, empty, their_state, our_r_state));
-        // append_moves(generateQueenCaptures(occ, empty, their_state, our_q_state));
+        generateBishopCaptures(occ, empty, their_state, our_b_state, move_list);
+        generateRookCaptures(occ, empty, their_state, our_r_state, move_list);
+        generateQueenCaptures(occ, empty, their_state, our_q_state, move_list);
         generateKingCaptures(their_state, our_k_state, move_list);
     }
 }

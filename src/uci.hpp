@@ -99,6 +99,16 @@ void UCI()
                                 std::cout << "Nodes per second: " << (node_count / seconds) << " nodes/s\n\n";
                             }
                         }
+                        else if (args[1] == "depth")
+                        {
+                            if (args.size() == 3)
+                            {
+                                int search_depth = std::stoi(args[2]);
+                                std::pair<float, Move> best_move = engine->alpha_beta(search_depth, __FLT_MIN__, __FLT_MAX__);
+                                std::cout << "Best move: " << MoveGeneration::moveToString(best_move.second) << '\n';
+
+                            }
+                        }
                     }
                 }
                 else if (args[0] == "clear")

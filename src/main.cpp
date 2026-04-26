@@ -29,26 +29,22 @@ int main(int argc, char** argv)
     }
 
     Engine *engine = new Engine();
-
     GameState *gamestate = &engine->gamestate;
 
-    gamestate->loadFromFen("4k3/8/8/8/8/8/p7/6K1 b - - 0 1"); // failing on pawn promotions where pawncount > 1 on a side
-    // gamestate->loadDefaultBoard(); // accurate up to perft 6
-    
-    // print_bb(ROOK_PEXT_TABLES[a5][37]);
-    
+    // gamestate->loadDefaultBoard(); 
+    gamestate->loadFromFen("8/p4pR1/1b2b2p/2rp4/5N1k/7P/PP4P1/1B5K b - - 0 1");
     std::cout << "Original State: \n";
     std::cout << getPrintableBoardState(gamestate->state) << '\n';
-    // std::cout << "\nMailbox Original Rep: \n";
-    // std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
 
-    // std::cout << "Bitboards Qcastling Rep: \n";
-    // std::cout << getPrintableBoardState(gamestate->state) << '\n';
-    // std::cout << "\nMailbox QCastling Rep: \n";
-    // std::cout << getPrintableBoardState(gamestate->mailbox) << '\n';
+    Move best_move = engine->alpha_beta(5, __FLT_MAX__, __FLT_MIN__).second;
+
+    std::cout << MoveGeneration::moveToString(best_move) << '\n';
+
+    return 0;
 
 
-    int perft_depth = 2;
+
+    int perft_depth = 6;
     auto start = std::chrono::steady_clock::now();
 
     unsigned long long node_count = engine->perft(perft_depth);
