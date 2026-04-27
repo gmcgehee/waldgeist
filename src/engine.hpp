@@ -56,7 +56,18 @@ public:
         return MVV_LVA[destination_piece][origin_piece];
     }
 
-    std::pair<float, Move> alpha_beta(int depth, float alpha, float beta)
+    // std::pair<float, Move> search(int depth, float alpha, float beta)
+    // {
+    //     std::pair<float, Move> best_move
+    //     for (int depth = 1; depth <= max_ply; depth++)
+    //     {
+    //         std = alpha_beta(depth, alpha, beta);
+    //         best_move = move;
+    //     }
+    //     return best_move;
+    // }
+
+    std::pair<float, Move> alpha_beta(int depth, float alpha, float beta, int ply = 0)
     {
 
         float max_score = -__FLT_MAX__;
@@ -129,8 +140,9 @@ public:
 
             if (gamestate.make(curr_move, undo))
             {
+
                 legal_moves++;
-                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha);
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1);
                 // std::cout << MoveGeneration::moveToString(curr_move) << ": " << curr_score << '\n';
 
                 gamestate.unmake(curr_move, undo);
@@ -153,7 +165,7 @@ public:
         if (legal_moves == 0)
         {
             if (gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them))
-                return std::pair<float, Move>{-MATE_SCORE + depth, best_move};
+                return std::pair<float, Move>{-MATE_SCORE + ply, best_move};
             else
             {
                 return std::pair<float, Move>{0, best_move};
@@ -163,7 +175,7 @@ public:
         return std::pair<float, Move>{max_score, best_move};
     }
 
-    float alpha_beta_recursion(int depth, float alpha, float beta)
+    float alpha_beta_recursion(int depth, float alpha, float beta, int ply)
     {
 
         if (depth == 0)
@@ -191,6 +203,17 @@ public:
 
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
+
+        if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth > 3)
+        {
+            float temp_score{};
+            gamestate.make_null();
+            temp_score = -alpha_beta_recursion(depth - 3, -beta, -beta + 1, ply + 1);
+            gamestate.unmake_null();
+
+            if (temp_score >= beta)
+                return beta;
+        }
 
         MoveList move_list{};
 
@@ -241,7 +264,7 @@ public:
             if (gamestate.make(curr_move, undo))
             {
                 legal_moves++;
-                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha); // may need to be 'max(curr_best, search())'
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1); // may need to be 'max(curr_best, search())'
 
                 gamestate.unmake(curr_move, undo);
 
@@ -262,7 +285,7 @@ public:
         if (legal_moves == 0)
         {
             if (gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them))
-                return -MATE_SCORE + depth;
+                return -MATE_SCORE + ply;
             else
             {
                 return 0;
@@ -337,7 +360,7 @@ public:
         {
 
             int best_score_index{i};
-            float best_move_score{-1000000};
+            float best_move_score{scores[i]};
 
             for (int j = i + 1; j < capture_list.count; j++)
             {
@@ -377,9 +400,26 @@ public:
         return max_score;
     }
 
+    float get_non_pawn_material(Side us) {
+        // float p_score = 100 * std::popcount(gamestate.state.pieces[us][PAWN]);
+        float n_score = 300 * std::popcount(gamestate.state.pieces[us][KNIGHT]);
+        float b_score = 320 * std::popcount(gamestate.state.pieces[us][BISHOP]);
+        float r_score = 500 * std::popcount(gamestate.state.pieces[us][ROOK]);
+        float q_score = 900 * std::popcount(gamestate.state.pieces[us][QUEEN]);
+        return + n_score + b_score + r_score + q_score;
+    }
+
     float eval()
     {
         BoardState state = gamestate.state;
+
+        Bitboard occ = gamestate.getFullState();
+        Bitboard empty = ~occ;
+
+        Side us = gamestate.state.sideToPlay;
+        Side them = (us == WHITE) ? BLACK : WHITE;
+
+        Bitboard their_state = gamestate.getSideState(them);
 
         // Material eval
         float p_score = 100 * (std::popcount(state.pieces[WHITE][PAWN]) - std::popcount(state.pieces[BLACK][PAWN]));
@@ -411,8 +451,29 @@ public:
             }
         }
 
-        // King safety eval
+        // Pawn structure
 
+        Bitboard white_pawn_occ = state.pieces[WHITE][PAWN];
+        Bitboard black_pawn_occ = state.pieces[BLACK][PAWN];
+
+        float pawn_structure_score{};
+
+        // Count pawn islands
+
+        // for (int i = 0; i < 8; i++) {
+
+        // }
+
+        // while (white_pawn_occ) {
+        //     Square curr_pawn_square = pop_lsb(white_pawn_occ);
+        //     Bitboard curr_pawn_bb = 1ULL << curr_pawn_square;
+
+        //     if () {
+        //         ;
+        //     }
+        // }
+
+        // King safety eval
 
         return (material_eval + square_eval) * (state.sideToPlay == WHITE ? 1 : -1);
     }

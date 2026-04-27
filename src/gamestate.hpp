@@ -663,6 +663,14 @@ public:
         state.fullMoves = undo.full_moves;
     }
 
+    inline void make_null() {
+        state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
+    }
+
+    inline void unmake_null() {
+        state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
+    }
+
     void UCI_make(std::string str_move)
     {
         Undo temp_undo;

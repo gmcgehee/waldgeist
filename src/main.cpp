@@ -34,11 +34,11 @@ Engine *engine = new Engine();
 GameState *gamestate = &engine->gamestate;
 
 gamestate->loadDefaultBoard();
-// gamestate->loadFromFen("8/3k1n2/1ppp4/8/8/8/1PP2R2/1K6 w - - 0 1");
+// gamestate->loadFromFen("8/3k1n2/1ppp4/8/8/8/1PP2R2/1K6 w - - 0 1"); 
 std::cout << "Original State: \n";
 std::cout << getPrintableBoardState(gamestate->state) << '\n';
 
-std::pair<float, Move> best_pair = engine->alpha_beta(8, -__FLT_MAX__, __FLT_MAX__);
+std::pair<float, Move> best_pair = engine->alpha_beta(8, -__FLT_MAX__, __FLT_MAX__, 0);
 
 std::cout << MoveGeneration::moveToString(best_pair.second) << "  " << best_pair.first << '\n';
 
