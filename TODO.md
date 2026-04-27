@@ -3,3 +3,4 @@
 * Null move pruning
 * Fix quiescence, doesn't currently work
 * Eval function: king safety, pawn structure, etc.
+* fix insane mvv lva from chatgpt
