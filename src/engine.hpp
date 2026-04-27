@@ -21,6 +21,33 @@ public:
         gamestate = GameState();
     }
 
+    inline Square get_destination_square(Move move)
+    {
+        return move & 0x3F;
+    }
+
+    inline Square get_origin_square(Move move)
+    {
+        return (move >> 6) & 0x3F;
+    }
+
+    inline float get_move_score(Move move)
+    {
+
+        float score{};
+
+        Square origin = get_origin_square(move);
+        Square destination = get_destination_square(move);
+        PieceType origin_piece = gamestate.getPieceAt(origin).piece_type;
+        PieceType destination_piece = gamestate.getPieceAt(destination).piece_type;
+
+        if (destination_piece == EMPTY)
+            return 0;
+
+        // MVV LVA
+        return MVV_LVA[origin_piece][destination_piece];
+    }
+
     std::pair<float, Move> alpha_beta(int depth, float alpha, float beta)
     {
 
@@ -47,7 +74,7 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        MoveList move_list;
+        MoveList move_list{};
 
         MoveGeneration::generateAllMoves(
             occ,
@@ -66,8 +93,28 @@ public:
 
         int legal_moves = 0;
 
+        std::array<float, 256> scores{};
+
+        for (int i = 0; i < move_list.count; i++)
+            scores[i] = get_move_score(move_list.moves[i]);
+
         for (int i = 0; i < move_list.count; i++)
         {
+
+            int best_score_index{i};
+            float best_move_score{-1000000};
+
+            for (int j = i; j < move_list.count; j++)
+            {
+                if (scores[j] > best_move_score)
+                {
+                    best_move_score = scores[j];
+                    best_score_index = j;
+                }
+            }
+
+            std::swap(move_list.moves[i], move_list.moves[best_score_index]);
+            std::swap(scores[i], scores[best_score_index]);
 
             Move curr_move = move_list.moves[i];
 
@@ -77,7 +124,7 @@ public:
             {
                 legal_moves++;
                 curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha); // may need to be 'max(curr_best, search())'
-                std::cout << MoveGeneration::moveToString(curr_move) << ": " << curr_score << '\n';
+                // std::cout << MoveGeneration::moveToString(curr_move) << ": " << curr_score << '\n';
 
                 gamestate.unmake(curr_move, undo);
 
@@ -115,7 +162,7 @@ public:
         if (depth == 0)
         {
             // return quiesce_recursion(alpha, beta);
-            return quiesce_recursion(-beta, -alpha);
+            return quiesce(-beta, -alpha);
         }
 
         float max_score = -__FLT_MAX__;
@@ -140,7 +187,7 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        MoveList move_list;
+        MoveList move_list{};
 
         MoveGeneration::generateAllMoves(
             occ,
@@ -159,8 +206,28 @@ public:
 
         int legal_moves = 0;
 
+        std::array<float, 256> scores{};
+
+        for (int i = 0; i < move_list.count; i++)
+            scores[i] = get_move_score(move_list.moves[i]);
+
         for (int i = 0; i < move_list.count; i++)
         {
+
+            int best_score_index{i};
+            float best_move_score{-1000000};
+
+            for (int j = i; j < move_list.count; j++)
+            {
+                if (scores[j] > best_move_score)
+                {
+                    best_move_score = scores[j];
+                    best_score_index = j;
+                }
+            }
+
+            std::swap(move_list.moves[i], move_list.moves[best_score_index]);
+            std::swap(scores[i], scores[best_score_index]);
 
             Move curr_move = move_list.moves[i];
 
@@ -203,83 +270,15 @@ public:
     float quiesce(float alpha, float beta)
     {
 
-        float max_score = -1e30f;
-        float curr_score{};
-        Move best_move{};
+        float stand_pat = eval();
 
-        Bitboard occ = gamestate.getFullState();
-        Bitboard empty = ~occ;
+        if (stand_pat >= beta)
+            return beta;
 
-        Side us = gamestate.state.sideToPlay;
-        Side them = (us == WHITE) ? BLACK : WHITE;
+        if (stand_pat > alpha)
+            alpha = stand_pat;
 
-        Bitboard our_state = gamestate.getSideState(us);
-        Bitboard their_state = gamestate.getSideState(them);
-
-        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-        Bitboard our_k_state = gamestate.state.pieces[us][KING];
-
-        u8 castling_rights = gamestate.state.castlingRights;
-        Square en_passant_square = gamestate.state.enPassantSquare;
-
-        MoveList capture_list;
-
-        MoveGeneration::generateAllCaptures(
-            occ,
-            empty,
-            their_state,
-            us,
-            our_p_state,
-            our_n_state,
-            our_b_state,
-            our_r_state,
-            our_q_state,
-            our_k_state,
-            castling_rights,
-            en_passant_square,
-            capture_list);
-
-        if (capture_list.count == 0)
-        {
-            return eval();
-        }
-
-        for (int i = 0; i < capture_list.count; i++)
-        {
-
-            Move curr_move = capture_list.moves[i];
-
-            Undo undo;
-
-            if (gamestate.make(curr_move, undo))
-            {
-                curr_score = quiesce_recursion(-beta, -alpha); // may need to be 'max(curr_best, search())'
-                gamestate.unmake(curr_move, undo);
-
-                if (curr_score > max_score)
-                {
-                    max_score = curr_score;
-                    best_move = curr_move;
-                }
-
-                if (curr_score >= beta)
-                {
-                    break;
-                }
-                alpha = curr_score > alpha ? curr_score : alpha;
-            }
-        }
-        return max_score;
-    }
-
-    float quiesce_recursion(float alpha, float beta)
-    {
-
-        float max_score = -__FLT_MAX__;
+        float max_score = stand_pat;
         float curr_score{};
 
         Bitboard occ = gamestate.getFullState();
@@ -301,7 +300,7 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        MoveList capture_list;
+        MoveList capture_list{};
 
         MoveGeneration::generateAllCaptures(
             occ,
@@ -323,8 +322,30 @@ public:
             return eval();
         }
 
+        int legal_captures{};
+
+        std::array<float, 256> scores{};
+
+        for (int i = 0; i < capture_list.count; i++)
+            scores[i] = get_move_score(capture_list.moves[i]);
+
         for (int i = 0; i < capture_list.count; i++)
         {
+
+            int best_score_index{i};
+            float best_move_score{-1000000};
+
+            for (int j = i; j < capture_list.count; j++)
+            {
+                if (scores[j] > best_move_score)
+                {
+                    best_move_score = scores[j];
+                    best_score_index = j;
+                }
+            }
+
+            std::swap(capture_list.moves[i], capture_list.moves[best_score_index]);
+            std::swap(scores[i], scores[best_score_index]);
 
             Move curr_move = capture_list.moves[i];
 
@@ -332,7 +353,8 @@ public:
 
             if (gamestate.make(curr_move, undo))
             {
-                curr_score = quiesce_recursion(-beta, -alpha); // may need to be 'max(curr_best, search())'
+                legal_captures++;
+                curr_score = -quiesce(-beta, -alpha); // may need to be 'max(curr_best, search())'
                 gamestate.unmake(curr_move, undo);
 
                 if (curr_score > max_score)
@@ -347,6 +369,12 @@ public:
                 alpha = curr_score > alpha ? curr_score : alpha;
             }
         }
+
+        if (legal_captures == 0)
+        {
+                return eval();
+        }
+
         return max_score;
     }
 
@@ -410,7 +438,7 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        MoveList move_list;
+        MoveList move_list{};
 
         MoveGeneration::generateAllMoves(
             occ,
@@ -470,7 +498,7 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        MoveList move_list;
+        MoveList move_list{};
 
         MoveGeneration::generateAllMoves(
             occ,

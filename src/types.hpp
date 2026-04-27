@@ -152,4 +152,7 @@ struct MoveList {
     int count = 0;
 };
 
-// typedef std::array<Move, 256> MoveList;
+struct ScoredMove {
+    Move move{};
+    float score{};
+};
