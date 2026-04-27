@@ -87,6 +87,11 @@ inline Square pop_lsb(Bitboard &bb)
     return index;
 }
 
+// Gifted by ChatGPT
+inline Square inverse_square(Square sq) {
+    return sq ^ 56;
+}
+
 void print_bb(Bitboard bb)
 {
 

@@ -44,6 +44,8 @@ void UCI()
                 }
                 else if (args[0] == "uci")
                 {
+                    std::cout << "id name Waldgeist" << '\n';
+                    std::cout << "id author Geist" << '\n';
                     std::cout << "uciok\n";
                 }
                 else if (args[0] == "isready")
@@ -61,12 +63,42 @@ void UCI()
                         if (args[1] == "startpos")
                         {
                             gamestate->loadDefaultBoard();
+
+                            // startpos moves ...
+                            size_t i = 2;
+                            if (i < args.size() && args[i] == "moves")
+                            {
+                                for (i = 3; i < args.size(); i++)
+                                {
+                                    // std::cout << "Making move " << args[i] << '\n';
+                                    gamestate->UCI_make(args[i]);
+                                }
+                            }
                         }
                         else if (args[1] == "fen")
                         {
-                            std::string fen_string = command.substr(13, command.size() - 13);
-                            std::cout << fen_string << '\n';
+                            // Extract full FEN (6 parts)
+                            std::string fen_string;
+                            size_t i = 2;
+
+                            for (int part = 0; part < 6 && i < args.size(); part++, i++)
+                            {
+                                if (!fen_string.empty())
+                                    fen_string += " ";
+                                fen_string += args[i];
+                            }
+
                             gamestate->loadFromFen(fen_string);
+
+                            // optional moves after fen
+                            if (i < args.size() && args[i] == "moves")
+                            {
+                                for (i++; i < args.size(); i++)
+                                {
+                                    // std::cout << "Making move " << args[i] << '\n';
+                                    gamestate->UCI_make(args[i]);
+                                }
+                            }
                         }
                     }
                 }
@@ -104,10 +136,14 @@ void UCI()
                             if (args.size() == 3)
                             {
                                 int search_depth = std::stoi(args[2]);
-                                std::pair<float, Move> best_move = engine->alpha_beta(search_depth, __FLT_MIN__, __FLT_MAX__);
-                                std::cout << "Best move: " << MoveGeneration::moveToString(best_move.second) << '\n';
-
+                                std::pair<float, Move> best_pair = engine->alpha_beta(search_depth, -100000, 100000);
+                                std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
                             }
+                        }
+                        else
+                        {
+                            std::pair<float, Move> best_pair = engine->alpha_beta(7, -100000, 100000);
+                            std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
                         }
                     }
                 }

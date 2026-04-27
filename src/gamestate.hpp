@@ -207,8 +207,9 @@ public:
 
                     if ((index >= a3 and index < h3) or (index >= a6 and index <= h6))
                         state.enPassantSquare = index; // this will be 63 if the square is a8 and 0 if it is h1
-                    else state.enPassantSquare = OUT_OF_BOUNDS;
-                    }
+                    else
+                        state.enPassantSquare = OUT_OF_BOUNDS;
+                }
             }
             else if (fieldnumber == 4)
             {
@@ -488,7 +489,6 @@ public:
                     Square rook_square = destination + 1;
                     unsetPieceAt(a1);
                     setPieceAt(rook_square, Piece{ROOK, us, &state.pieces[us][ROOK]});
-
                 }
                 break;
             case g8:
@@ -661,5 +661,72 @@ public:
         state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
         state.halfMoves = undo.half_moves;
         state.fullMoves = undo.full_moves;
+    }
+
+    void UCI_make(std::string str_move)
+    {
+        Undo temp_undo;
+        Move move = UCI_convert_to_move(str_move);
+        make(move, temp_undo);
+    }
+
+    Move UCI_convert_to_move(std::string str_move)
+    {
+        Square origin = squareToIndex(str_move.substr(0, 2));
+        Square destination = squareToIndex(str_move.substr(2, 2));
+        PieceType promotion_piece{PAWN}; // adds 1 because 0 means knight, but in the enum it means pawn
+        char promotion_piece_char{};
+        SpecialMoveFlag flag{NONSPECIAL};
+
+        Piece piece_on_origin = getPieceAt(origin);
+
+        if (str_move.size() == 5)
+        {
+            switch (str_move[4])
+            {
+            case 'q':
+                promotion_piece = QUEEN;
+                break;
+            case 'n':
+                promotion_piece = KNIGHT;
+                break;
+            case 'r':
+                promotion_piece = ROOK;
+                break;
+            case 'b':
+                promotion_piece = BISHOP;
+                break;
+            default:
+                promotion_piece = PAWN;
+                break;
+            }
+        }
+        // only promotes if promotion flag is set
+
+        
+        switch (piece_on_origin.piece_type)
+        {
+            case PAWN:
+            if (origin - destination == 16 or destination - origin == 16)
+            {
+                flag = PAWN_DOUBLE_PUSH;
+            }
+            else if (destination >= a8 or destination <= h1) {
+                flag = PROMOTION;
+            }
+            break;
+        case KING:
+            if ((origin - destination == 2 or destination - origin == 2) and (origin == e1 or origin == e8)) {
+                flag = CASTLING;
+            }
+        }
+
+        Move move = MoveGeneration::convertToMove(destination, origin, promotion_piece, flag);
+
+        // std::cout << "Converted move " << str_move << " to ";
+        // printf("%b\n", move);  // Output: 1010
+
+        
+        return move;
     }
 };

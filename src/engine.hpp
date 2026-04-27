@@ -9,6 +9,7 @@
 #include "gamestate.hpp"
 #include "movegen.hpp"
 #include "debug.hpp"
+#include "../precalculation/piece_square.hpp"
 
 class Engine
 {
@@ -23,14 +24,9 @@ public:
     std::pair<float, Move> alpha_beta(int depth, float alpha, float beta)
     {
 
-        if (depth == 0)
-        {
-            return quiesce(alpha, beta);
-        }
-
         float max_score = -__FLT_MAX__;
         float curr_score{};
-        Move best_move;
+        Move best_move{};
 
         Bitboard occ = gamestate.getFullState();
         Bitboard empty = ~occ;
@@ -68,10 +64,7 @@ public:
             en_passant_square,
             move_list);
 
-        if (move_list.count == 0)
-        {
-            // return us == WHITE ? -__FLT_MAX__ : __FLT_MAX__;
-        }
+        int legal_moves = 0;
 
         for (int i = 0; i < move_list.count; i++)
         {
@@ -82,7 +75,10 @@ public:
 
             if (gamestate.make(curr_move, undo))
             {
-                curr_score = alpha_beta_recursion(depth - 1, -beta, -alpha); // may need to be 'max(curr_best, search())'
+                legal_moves++;
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha); // may need to be 'max(curr_best, search())'
+                std::cout << MoveGeneration::moveToString(curr_move) << ": " << curr_score << '\n';
+
                 gamestate.unmake(curr_move, undo);
 
                 if (curr_score > max_score)
@@ -91,15 +87,26 @@ public:
                     best_move = curr_move;
                 }
 
-                if (curr_score >= beta)
+                alpha = curr_score > alpha ? curr_score : alpha;
+
+                if (alpha >= beta)
                 {
                     break;
                 }
-
-                alpha = curr_score > alpha ? curr_score : alpha;
             }
         }
-        return std::pair<float, Move> {max_score, best_move};
+
+        if (legal_moves == 0)
+        {
+            if (gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them))
+                return std::pair<float, Move>{-MATE_SCORE - depth, best_move};
+            else
+            {
+                return std::pair<float, Move>{0, best_move};
+            }
+        }
+
+        return std::pair<float, Move>{max_score, best_move};
     }
 
     float alpha_beta_recursion(int depth, float alpha, float beta)
@@ -107,7 +114,8 @@ public:
 
         if (depth == 0)
         {
-            return quiesce_recursion(alpha, beta);
+            // return quiesce_recursion(alpha, beta);
+            return eval();
         }
 
         float max_score = -__FLT_MAX__;
@@ -149,10 +157,7 @@ public:
             en_passant_square,
             move_list);
 
-        if (move_list.count == 0)
-        {
-            return us == WHITE ? -__FLT_MAX__ : __FLT_MAX__;
-        }
+        int legal_moves = 0;
 
         for (int i = 0; i < move_list.count; i++)
         {
@@ -163,7 +168,9 @@ public:
 
             if (gamestate.make(curr_move, undo))
             {
-                curr_score = alpha_beta_recursion(depth - 1, -beta, -alpha); // may need to be 'max(curr_best, search())'
+                legal_moves++;
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha); // may need to be 'max(curr_best, search())'
+
                 gamestate.unmake(curr_move, undo);
 
                 if (curr_score > max_score)
@@ -171,23 +178,34 @@ public:
                     max_score = curr_score;
                 }
 
-                if (curr_score >= beta)
+                alpha = curr_score > alpha ? curr_score : alpha;
+
+                if (alpha >= beta)
                 {
                     break;
                 }
-
-                alpha = curr_score > alpha ? curr_score : alpha;
             }
         }
+
+        if (legal_moves == 0)
+        {
+            if (gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them))
+                return -MATE_SCORE - depth;
+            else
+            {
+                return 0;
+            }
+        }
+
         return max_score;
     }
 
     float quiesce(float alpha, float beta)
     {
 
-        float max_score = -__FLT_MAX__;
+        float max_score = -1e30f;
         float curr_score{};
-        Move best_move;
+        Move best_move{};
 
         Bitboard occ = gamestate.getFullState();
         Bitboard empty = ~occ;
@@ -343,7 +361,30 @@ public:
         float q_score = 900 * (std::popcount(state.pieces[WHITE][QUEEN]) - std::popcount(state.pieces[BLACK][QUEEN]));
         float material_eval = p_score + n_score + b_score + r_score + q_score;
 
-        return (material_eval); // * (state.sideToPlay == WHITE ? 1 : -1);
+        float square_eval{};
+        for (int i = 0; i < KING - 1; i++)
+        {
+            Bitboard curr_piece = state.pieces[WHITE][i];
+            while (curr_piece)
+            {
+                Square sq = pop_lsb(curr_piece);
+                square_eval += PST[i][sq];
+            }
+        }
+
+        for (int i = 0; i < KING - 1; i++)
+        {
+            Bitboard curr_piece = state.pieces[BLACK][i];
+            while (curr_piece)
+            {
+                Square sq = pop_lsb(curr_piece);
+                square_eval += PST[i][inverse_square(sq)];
+            }
+        }
+
+        // for (int i = 0 )
+
+        return (material_eval + square_eval) * (state.sideToPlay == WHITE ? 1 : -1);
     }
 
     unsigned long long perft(int depth)

@@ -8,6 +8,8 @@ typedef uint64_t Bitboard;
 typedef uint8_t Square;
 typedef uint16_t Move;
 
+constexpr float MATE_SCORE = 1e20;
+
 enum Side : int
 {
     WHITE = 0,
