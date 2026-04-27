@@ -31,21 +31,29 @@ public:
         return (move >> 6) & 0x3F;
     }
 
+    inline u8 get_flag(Move move)
+    {
+        return move >> 14;
+    }
+
     inline float get_move_score(Move move)
     {
-
-        float score{};
 
         Square origin = get_origin_square(move);
         Square destination = get_destination_square(move);
         PieceType origin_piece = gamestate.getPieceAt(origin).piece_type;
         PieceType destination_piece = gamestate.getPieceAt(destination).piece_type;
 
+        if (origin_piece == PAWN and destination == gamestate.state.enPassantSquare)
+        {
+            destination_piece = PAWN;
+        }
+
         if (destination_piece == EMPTY)
             return 0;
 
         // MVV LVA
-        return MVV_LVA[origin_piece][destination_piece];
+        return MVV_LVA[destination_piece][origin_piece];
     }
 
     std::pair<float, Move> alpha_beta(int depth, float alpha, float beta)
@@ -61,7 +69,6 @@ public:
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
 
-        Bitboard our_state = gamestate.getSideState(us);
         Bitboard their_state = gamestate.getSideState(them);
 
         Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
@@ -102,9 +109,9 @@ public:
         {
 
             int best_score_index{i};
-            float best_move_score{-1000000};
+            float best_move_score{scores[i]};
 
-            for (int j = i; j < move_list.count; j++)
+            for (int j = i + 1; j < move_list.count; j++)
             {
                 if (scores[j] > best_move_score)
                 {
@@ -123,7 +130,7 @@ public:
             if (gamestate.make(curr_move, undo))
             {
                 legal_moves++;
-                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha); // may need to be 'max(curr_best, search())'
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha);
                 // std::cout << MoveGeneration::moveToString(curr_move) << ": " << curr_score << '\n';
 
                 gamestate.unmake(curr_move, undo);
@@ -161,8 +168,7 @@ public:
 
         if (depth == 0)
         {
-            // return quiesce_recursion(alpha, beta);
-            return quiesce(-beta, -alpha);
+            return quiesce(alpha, beta);
         }
 
         float max_score = -__FLT_MAX__;
@@ -174,7 +180,6 @@ public:
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
 
-        Bitboard our_state = gamestate.getSideState(us);
         Bitboard their_state = gamestate.getSideState(them);
 
         Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
@@ -217,7 +222,7 @@ public:
             int best_score_index{i};
             float best_move_score{-1000000};
 
-            for (int j = i; j < move_list.count; j++)
+            for (int j = i + 1; j < move_list.count; j++)
             {
                 if (scores[j] > best_move_score)
                 {
@@ -287,7 +292,6 @@ public:
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
 
-        Bitboard our_state = gamestate.getSideState(us);
         Bitboard their_state = gamestate.getSideState(them);
 
         Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
@@ -319,7 +323,7 @@ public:
 
         if (capture_list.count == 0)
         {
-            return eval();
+            return stand_pat;
         }
 
         int legal_captures{};
@@ -335,7 +339,7 @@ public:
             int best_score_index{i};
             float best_move_score{-1000000};
 
-            for (int j = i; j < capture_list.count; j++)
+            for (int j = i + 1; j < capture_list.count; j++)
             {
                 if (scores[j] > best_move_score)
                 {
@@ -370,11 +374,6 @@ public:
             }
         }
 
-        if (legal_captures == 0)
-        {
-                return eval();
-        }
-
         return max_score;
     }
 
@@ -382,6 +381,7 @@ public:
     {
         BoardState state = gamestate.state;
 
+        // Material eval
         float p_score = 100 * (std::popcount(state.pieces[WHITE][PAWN]) - std::popcount(state.pieces[BLACK][PAWN]));
         float n_score = 300 * (std::popcount(state.pieces[WHITE][KNIGHT]) - std::popcount(state.pieces[BLACK][KNIGHT]));
         float b_score = 320 * (std::popcount(state.pieces[WHITE][BISHOP]) - std::popcount(state.pieces[BLACK][BISHOP]));
@@ -389,6 +389,7 @@ public:
         float q_score = 900 * (std::popcount(state.pieces[WHITE][QUEEN]) - std::popcount(state.pieces[BLACK][QUEEN]));
         float material_eval = p_score + n_score + b_score + r_score + q_score;
 
+        // Piece-square eval
         float square_eval{};
         for (int i = 0; i < KING - 1; i++)
         {
@@ -410,7 +411,8 @@ public:
             }
         }
 
-        // for (int i = 0 )
+        // King safety eval
+
 
         return (material_eval + square_eval) * (state.sideToPlay == WHITE ? 1 : -1);
     }
@@ -425,7 +427,6 @@ public:
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
 
-        Bitboard our_state = gamestate.getSideState(us);
         Bitboard their_state = gamestate.getSideState(them);
 
         Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
@@ -485,7 +486,6 @@ public:
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
 
-        Bitboard our_state = gamestate.getSideState(us);
         Bitboard their_state = gamestate.getSideState(them);
 
         Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
