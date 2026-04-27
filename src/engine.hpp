@@ -99,7 +99,7 @@ public:
         if (legal_moves == 0)
         {
             if (gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them))
-                return std::pair<float, Move>{-MATE_SCORE - depth, best_move};
+                return std::pair<float, Move>{-MATE_SCORE + depth, best_move};
             else
             {
                 return std::pair<float, Move>{0, best_move};
@@ -115,7 +115,7 @@ public:
         if (depth == 0)
         {
             // return quiesce_recursion(alpha, beta);
-            return eval();
+            return quiesce_recursion(-beta, -alpha);
         }
 
         float max_score = -__FLT_MAX__;
@@ -190,7 +190,7 @@ public:
         if (legal_moves == 0)
         {
             if (gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them))
-                return -MATE_SCORE - depth;
+                return -MATE_SCORE + depth;
             else
             {
                 return 0;
@@ -273,7 +273,7 @@ public:
                 alpha = curr_score > alpha ? curr_score : alpha;
             }
         }
-        return eval();
+        return max_score;
     }
 
     float quiesce_recursion(float alpha, float beta)
