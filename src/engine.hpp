@@ -175,7 +175,7 @@ public:
         return std::pair<float, Move>{max_score, best_move};
     }
 
-    float alpha_beta_recursion(int depth, float alpha, float beta, int ply)
+    float alpha_beta_recursion(int depth, float alpha, float beta, int ply, bool is_null_search = false)
     {
 
         if (depth == 0)
@@ -204,15 +204,21 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth > 3)
-        {
-            float temp_score{};
-            gamestate.make_null();
-            temp_score = -alpha_beta_recursion(depth - 3, -beta, -beta + 1, ply + 1);
-            gamestate.unmake_null();
+        int R = 3 + depth / 6;
 
-            if (temp_score >= beta)
-                return beta;
+        if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
+        {
+            if (eval() > beta)
+            {
+                float temp_score{};
+                Square en_passant_square = gamestate.state.enPassantSquare;
+                gamestate.make_null();
+                temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
+                gamestate.unmake_null(en_passant_square);
+
+                if (temp_score >= beta)
+                    return beta;
+            }
         }
 
         MoveList move_list{};
@@ -264,7 +270,7 @@ public:
             if (gamestate.make(curr_move, undo))
             {
                 legal_moves++;
-                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1); // may need to be 'max(curr_best, search())'
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1, is_null_search); // may need to be 'max(curr_best, search())'
 
                 gamestate.unmake(curr_move, undo);
 
@@ -400,13 +406,14 @@ public:
         return max_score;
     }
 
-    float get_non_pawn_material(Side us) {
+    float get_non_pawn_material(Side us)
+    {
         // float p_score = 100 * std::popcount(gamestate.state.pieces[us][PAWN]);
         float n_score = 300 * std::popcount(gamestate.state.pieces[us][KNIGHT]);
         float b_score = 320 * std::popcount(gamestate.state.pieces[us][BISHOP]);
         float r_score = 500 * std::popcount(gamestate.state.pieces[us][ROOK]);
         float q_score = 900 * std::popcount(gamestate.state.pieces[us][QUEEN]);
-        return + n_score + b_score + r_score + q_score;
+        return +n_score + b_score + r_score + q_score;
     }
 
     float eval()
@@ -453,10 +460,10 @@ public:
 
         // Pawn structure
 
-        Bitboard white_pawn_occ = state.pieces[WHITE][PAWN];
-        Bitboard black_pawn_occ = state.pieces[BLACK][PAWN];
+        // Bitboard white_pawn_occ = state.pieces[WHITE][PAWN];
+        // Bitboard black_pawn_occ = state.pieces[BLACK][PAWN];
 
-        float pawn_structure_score{};
+        // float pawn_structure_score{};
 
         // Count pawn islands
 
@@ -475,7 +482,8 @@ public:
 
         // King safety eval
 
-        return (material_eval + square_eval) * (state.sideToPlay == WHITE ? 1 : -1);
+
+        return (material_eval + square_eval) * (us == WHITE ? 1 : -1);
     }
 
     unsigned long long perft(int depth)

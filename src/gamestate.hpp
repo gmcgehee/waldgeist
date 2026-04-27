@@ -663,12 +663,15 @@ public:
         state.fullMoves = undo.full_moves;
     }
 
+    // does not track EP state
     inline void make_null() {
         state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
+        state.enPassantSquare = OUT_OF_BOUNDS;
     }
 
-    inline void unmake_null() {
+    inline void unmake_null(Square original_en_passant_square) {
         state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
+        state.enPassantSquare = original_en_passant_square;
     }
 
     void UCI_make(std::string str_move)
