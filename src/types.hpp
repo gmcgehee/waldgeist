@@ -8,7 +8,7 @@ typedef uint64_t Bitboard;
 typedef uint8_t Square;
 typedef uint16_t Move;
 
-constexpr float MATE_SCORE = 1e10;
+constexpr float MATE_SCORE = 10'000'000;
 
 enum Side : int
 {

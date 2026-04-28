@@ -142,7 +142,7 @@ void UCI()
                         }
                         else
                         {
-                            std::pair<float, Move> best_pair = engine->alpha_beta(8, -100000, 100000);
+                            std::pair<float, Move> best_pair = engine->alpha_beta(7, -100000, 100000);
                             std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
                         }
                     }

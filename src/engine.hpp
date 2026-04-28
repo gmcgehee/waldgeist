@@ -182,7 +182,7 @@ public:
         {
             return quiesce(alpha, beta);
         }
-
+        
         float max_score = -__FLT_MAX__;
         float curr_score{};
 
@@ -204,22 +204,22 @@ public:
         u8 castling_rights = gamestate.state.castlingRights;
         Square en_passant_square = gamestate.state.enPassantSquare;
 
-        int R = 3 + depth / 6;
+        // int R = 3 + depth / 6;
 
-        if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
-        {
-            if (eval() > beta)
-            {
-                float temp_score{};
-                Square en_passant_square = gamestate.state.enPassantSquare;
-                gamestate.make_null();
-                temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
-                gamestate.unmake_null(en_passant_square);
+        // if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
+        // {
+        //     if (eval() > beta)
+        //     {
+        //         float temp_score{};
+        //         Square en_passant_square = gamestate.state.enPassantSquare;
+        //         gamestate.make_null();
+        //         temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
+        //         gamestate.unmake_null(en_passant_square);
 
-                if (temp_score >= beta)
-                    return beta;
-            }
-        }
+        //         if (temp_score >= beta)
+        //             return beta;
+        //     }
+        // }
 
         MoveList move_list{};
 
@@ -454,7 +454,7 @@ public:
             while (curr_piece)
             {
                 Square sq = pop_lsb(curr_piece);
-                square_eval += PST[i][inverse_square(sq)];
+                square_eval -= PST[i][inverse_square(sq)];
             }
         }
 

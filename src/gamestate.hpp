@@ -664,12 +664,14 @@ public:
     }
 
     // does not track EP state
-    inline void make_null() {
+    inline void make_null()
+    {
         state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
         state.enPassantSquare = OUT_OF_BOUNDS;
     }
 
-    inline void unmake_null(Square original_en_passant_square) {
+    inline void unmake_null(Square original_en_passant_square)
+    {
         state.sideToPlay = state.sideToPlay == WHITE ? BLACK : WHITE;
         state.enPassantSquare = original_en_passant_square;
     }
@@ -691,53 +693,57 @@ public:
 
         Piece piece_on_origin = getPieceAt(origin);
 
+        int true_promotion_piece{};
+
         if (str_move.size() == 5)
         {
             switch (str_move[4])
             {
-            case 'q':
-                promotion_piece = QUEEN;
-                break;
             case 'n':
                 promotion_piece = KNIGHT;
-                break;
-            case 'r':
-                promotion_piece = ROOK;
                 break;
             case 'b':
                 promotion_piece = BISHOP;
                 break;
+            case 'r':
+                promotion_piece = ROOK;
+                break;
+            case 'q':
+                promotion_piece = QUEEN;
+                break;
             default:
-                promotion_piece = PAWN;
+                promotion_piece = KNIGHT;
                 break;
             }
+            // to store promotion piece type in the move, it has to have one subtracted from it.
+            true_promotion_piece = promotion_piece - 1;
         }
         // only promotes if promotion flag is set
 
-        
         switch (piece_on_origin.piece_type)
         {
-            case PAWN:
+        case PAWN:
             if (origin - destination == 16 or destination - origin == 16)
             {
                 flag = PAWN_DOUBLE_PUSH;
             }
-            else if (destination >= a8 or destination <= h1) {
+            else if (destination >= a8 or destination <= h1)
+            {
                 flag = PROMOTION;
             }
             break;
         case KING:
-            if ((origin - destination == 2 or destination - origin == 2) and (origin == e1 or origin == e8)) {
+            if ((origin - destination == 2 or destination - origin == 2) and (origin == e1 or origin == e8))
+            {
                 flag = CASTLING;
             }
         }
 
-        Move move = MoveGeneration::convertToMove(destination, origin, promotion_piece, flag);
+        Move move = MoveGeneration::convertToMove(destination, origin, (PieceType)true_promotion_piece, flag);
 
         // std::cout << "Converted move " << str_move << " to ";
         // printf("%b\n", move);  // Output: 1010
 
-        
         return move;
     }
 };
