@@ -270,7 +270,7 @@ public:
             if (gamestate.make(curr_move, undo))
             {
                 legal_moves++;
-                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1, is_null_search); // may need to be 'max(curr_best, search())'
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1, is_null_search); 
 
                 gamestate.unmake(curr_move, undo);
 
@@ -387,7 +387,7 @@ public:
             if (gamestate.make(curr_move, undo))
             {
                 legal_captures++;
-                curr_score = -quiesce(-beta, -alpha); // may need to be 'max(curr_best, search())'
+                curr_score = -quiesce(-beta, -alpha);   
                 gamestate.unmake(curr_move, undo);
 
                 if (curr_score > max_score)
@@ -413,7 +413,7 @@ public:
         float b_score = 320 * std::popcount(gamestate.state.pieces[us][BISHOP]);
         float r_score = 500 * std::popcount(gamestate.state.pieces[us][ROOK]);
         float q_score = 900 * std::popcount(gamestate.state.pieces[us][QUEEN]);
-        return +n_score + b_score + r_score + q_score;
+        return n_score + b_score + r_score + q_score;
     }
 
     float eval()

@@ -7,6 +7,7 @@
 #include "bitboard.hpp"
 #include "types.hpp"
 #include "tables.hpp"
+#include "gamestate.hpp"
 #include "../precalculation/bishop/bishop_pext_tables.hpp"
 #include "../precalculation/bishop/bishop_ray_masks.hpp"
 #include "../precalculation/rook/rook_pext_tables.hpp"
@@ -241,9 +242,6 @@ namespace MoveGeneration
     void generateKnightCaptures(Bitboard their_state, Bitboard our_n_state, MoveList &move_list)
     {
 
-        // - The number 16 (originally) is because two knights in the middle of the board (safe assumption) have 8 moves
-        // - Might I want to take the populattion count?
-
         while (our_n_state)
         {
             Square origin = pop_lsb(our_n_state);
@@ -275,7 +273,6 @@ namespace MoveGeneration
         }
     }
 
-    // todo: currently returns captures and quiets as one thing
     void generateBishopMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_b_state, MoveList &move_list)
     {
 
@@ -321,8 +318,23 @@ namespace MoveGeneration
         }
     }
 
-    // NOTE: currently unused
-    void generateBishopQuiets(Bitboard empty, Bitboard our_b_state, MoveList &move_list);
+    void generateBishopQuiets(Bitboard occ, Bitboard empty, Bitboard our_b_state, MoveList &move_list)
+    {
+        while (our_b_state)
+        {
+            Square origin = pop_lsb(our_b_state);
+            int pext_index = (int)_pext_u64(occ, BISHOP_RAY_MASKS[origin]);
+            Bitboard moves = BISHOP_PEXT_TABLES[origin][pext_index];
+            Bitboard quiets = moves & empty;
+
+            while (quiets)
+            {
+                Square destination = pop_lsb(quiets);
+                Move move = convertToMove(destination, origin);
+                move_list.moves[move_list.count++] = move;
+            }
+        }
+    }
 
     void generateRookMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_r_state, MoveList &move_list)
     {
@@ -367,12 +379,27 @@ namespace MoveGeneration
                 Move move = convertToMove(destination, origin);
                 move_list.moves[move_list.count++] = move;
             }
-
         }
     }
 
-    // NOTE: currently unused
-    void generateRookQuiets(Bitboard empty, Bitboard our_r_state, MoveList &move_list);
+    void generateRookQuiets(Bitboard occ, Bitboard empty, Bitboard our_r_state, MoveList &move_list)
+    {
+
+        while (our_r_state)
+        {
+            Square origin = pop_lsb(our_r_state);
+            int pext_index = (int)_pext_u64(occ, ROOK_RAY_MASKS[origin]);
+            Bitboard moves = ROOK_PEXT_TABLES[origin][pext_index];
+            Bitboard quiets = moves & empty;
+
+            while (quiets)
+            {
+                Square destination = pop_lsb(quiets);
+                Move move = convertToMove(destination, origin);
+                move_list.moves[move_list.count++] = move;
+            }
+        }
+    }
 
     void generateQueenMoves(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_q_state, MoveList &move_list)
     {
@@ -403,7 +430,6 @@ namespace MoveGeneration
         }
     }
 
-    // NOTE: currently unused
     void generateQueenCaptures(Bitboard occ, Bitboard empty, Bitboard their_state, Bitboard our_q_state, MoveList &move_list)
     {
 
@@ -426,8 +452,26 @@ namespace MoveGeneration
         }
     }
 
-    // NOTE: currently unused
-    void generateQueenQuiets(Bitboard empty, Bitboard our_q_state, MoveList &move_list);
+    void generateQueenQuiets(Bitboard occ, Bitboard empty, Bitboard our_q_state, MoveList &move_list)
+    {
+
+        while (our_q_state)
+        {
+            Square origin = pop_lsb(our_q_state);
+            int line_pext_index = (int)_pext_u64(occ, ROOK_RAY_MASKS[origin]);
+            int diag_pext_index = (int)_pext_u64(occ, BISHOP_RAY_MASKS[origin]);
+
+            Bitboard moves = ROOK_PEXT_TABLES[origin][line_pext_index] | BISHOP_PEXT_TABLES[origin][diag_pext_index];
+            Bitboard quiets = moves & empty;
+
+            while (quiets)
+            {
+                Square destination = pop_lsb(quiets);
+                Move move = convertToMove(destination, origin);
+                move_list.moves[move_list.count++] = move;
+            }
+        }
+    }
 
     void generateKingCaptures(Bitboard their_state, Bitboard our_k_state, MoveList &move_list)
     {
@@ -530,4 +574,66 @@ namespace MoveGeneration
         generateQueenCaptures(occ, empty, their_state, our_q_state, move_list);
         generateKingCaptures(their_state, our_k_state, move_list);
     }
+
+    void generateAllQuiets(const GameState &gamestate, MoveList &move_list)
+    {
+        Bitboard occ = gamestate.getFullState();
+        Bitboard empty = ~occ;
+
+        Side us = gamestate.state.sideToPlay;
+        Side them = us == WHITE ? BLACK : WHITE;
+
+        generatePawnPushes(empty, gamestate.state.pieces[us][PAWN], us, move_list);
+        generateKnightQuiets(empty, gamestate.state.pieces[us][KNIGHT], move_list);
+        generateBishopQuiets(occ, empty, gamestate.state.pieces[us][BISHOP], move_list);
+        generateRookQuiets(occ, empty, gamestate.state.pieces[us][ROOK], move_list);
+        generateQueenQuiets(occ, empty, gamestate.state.pieces[us][QUEEN], move_list);
+        generateKingQuiets(empty, gamestate.state.pieces[us][KING], gamestate.state.castlingRights, us, move_list);
+    }
+
+    void generateAllCaptures(const GameState &gamestate, MoveList &move_list)
+    {
+        Bitboard occ = gamestate.getFullState();
+        Bitboard empty = ~occ;
+
+        Side us = gamestate.state.sideToPlay;
+        Side them = us == WHITE ? BLACK : WHITE;
+        Bitboard their_state = gamestate.getSideState(them);
+
+        generatePawnCaptures(their_state, gamestate.state.pieces[us][PAWN], us, gamestate.state.enPassantSquare, move_list);
+        generateKnightCaptures(empty, gamestate.state.pieces[us][KNIGHT], move_list);
+        generateBishopCaptures(occ, empty, their_state, gamestate.state.pieces[us][BISHOP], move_list);
+        generateRookCaptures(occ, empty, their_state, gamestate.state.pieces[us][ROOK], move_list);
+        generateQueenCaptures(occ, empty, their_state, gamestate.state.pieces[us][QUEEN], move_list);
+        generateKingCaptures(their_state, gamestate.state.pieces[us][KING], move_list);
+    }
+
+    void generateAllMoves(const GameState &gamestate, MoveList &move_list)
+    {
+        generateAllCaptures(gamestate, move_list);
+        generateAllQuiets(gamestate, move_list);
+
+    }
+
+    void generateAllMoves(GameState gamestate, MoveList &move_list)
+    {
+        Bitboard occ = gamestate.getFullState();
+        Bitboard empty = ~occ;
+
+        Side us = gamestate.state.sideToPlay;
+        Side them = (us == WHITE) ? BLACK : WHITE;
+
+        Bitboard their_state = gamestate.getSideState(them);
+
+        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
+        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
+        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
+        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
+        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
+        Bitboard our_k_state = gamestate.state.pieces[us][KING];
+
+        u8 castling_rights = gamestate.state.castlingRights;
+        Square en_passant_square = gamestate.state.enPassantSquare;
+    }
+
 }

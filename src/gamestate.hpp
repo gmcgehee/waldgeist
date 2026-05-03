@@ -235,7 +235,7 @@ public:
         }
     }
 
-    Bitboard getSideState(Side side)
+    Bitboard getSideState(Side side) const
     {
         Bitboard result = 0ULL;
 
@@ -247,12 +247,12 @@ public:
         return result;
     }
 
-    Bitboard getFullState()
+    Bitboard getFullState() const
     {
         return getSideState(BLACK) | getSideState(WHITE);
     }
 
-    inline Piece getPieceAt(Square square)
+    inline Piece getPieceAt(Square square) const
     {
         return mailbox[square];
     }
@@ -272,7 +272,7 @@ public:
         unset_bit(*piece.piece_bb, square);
     }
 
-    bool isSquareThreatened(Square square, Side bySide)
+    bool isSquareThreatened(Square square, Side bySide) const
     {
         Bitboard occ = getSideState(WHITE) | getSideState(BLACK);
         Bitboard threatened_squares = 0ULL; // will not be all threatened squares (like with knight and pawn moves) but just the relevant ones
@@ -310,16 +310,20 @@ public:
         return false;
     }
 
+    // TODO: finish this (easy)
+    bool is_mate(Side us, Side them) const 
+    {
+        if (isSquareThreatened(__builtin_ctzll(state.pieces[us][KING]), them)) {
+            Undo undo{};
+            
+        }
+    }
+
     /// @brief  Moves one piece
     /// @param move A 16-bit integer. Bits 0-5 hold origin, 6-11 hold destination, and 12-16 include special move flags and promotion piece type (not in that order).
     bool make(Move move, Undo &undo)
     {
 
-        // Temporary for debug
-        // std::cout << "\nState before make: \n"
-        //           << getPrintableBoardState(state) << '\n';
-        // std::cout << "\nMailbox: \n"
-        //           << getPrintableBoardState(mailbox) << '\n';
 
         // DECONSTRUCT THE MOVE
         Square destination = move & 0x3F;
@@ -683,7 +687,7 @@ public:
         make(move, temp_undo);
     }
 
-    Move UCI_convert_to_move(std::string str_move)
+    Move UCI_convert_to_move(std::string str_move) const
     {
         Square origin = squareToIndex(str_move.substr(0, 2));
         Square destination = squareToIndex(str_move.substr(2, 2));
