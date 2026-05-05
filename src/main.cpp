@@ -15,6 +15,14 @@
 // temporary
 #include <chrono>
 
+/* TODO: 
+    - Troubleshoot GameState class not being recognized in movegen params
+    - Modify PSTs and MVV-LVA tables/how they're called
+    - Look around for other TODOs that have been labeled
+
+*/
+
+
 int main(int argc, char **argv)
 {
     UCI();

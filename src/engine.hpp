@@ -56,6 +56,45 @@ public:
         return MVV_LVA[destination_piece][origin_piece];
     }
 
+    void generateAllQuiets(const GameState &gamestate, MoveList &move_list)
+    {
+        Bitboard occ = gamestate.getFullState();
+        Bitboard empty = ~occ;
+
+        Side us = gamestate.state.sideToPlay;
+        Side them = us == WHITE ? BLACK : WHITE;
+
+        MoveGeneration::generatePawnPushes(empty, gamestate.state.pieces[us][PAWN], us, move_list);
+        MoveGeneration::generateKnightQuiets(empty, gamestate.state.pieces[us][KNIGHT], move_list);
+        MoveGeneration::generateBishopQuiets(occ, empty, gamestate.state.pieces[us][BISHOP], move_list);
+        MoveGeneration::generateRookQuiets(occ, empty, gamestate.state.pieces[us][ROOK], move_list);
+        MoveGeneration::generateQueenQuiets(occ, empty, gamestate.state.pieces[us][QUEEN], move_list);
+        MoveGeneration::generateKingQuiets(empty, gamestate.state.pieces[us][KING], gamestate.state.castlingRights, us, move_list);
+    }
+
+    void generateAllCaptures(const GameState &gamestate, MoveList &move_list)
+    {
+        Bitboard occ = gamestate.getFullState();
+        Bitboard empty = ~occ;
+
+        Side us = gamestate.state.sideToPlay;
+        Side them = us == WHITE ? BLACK : WHITE;
+        Bitboard their_state = gamestate.getSideState(them);
+
+        MoveGeneration::generatePawnCaptures(their_state, gamestate.state.pieces[us][PAWN], us, gamestate.state.enPassantSquare, move_list);
+        MoveGeneration::generateKnightCaptures(empty, gamestate.state.pieces[us][KNIGHT], move_list);
+        MoveGeneration::generateBishopCaptures(occ, empty, their_state, gamestate.state.pieces[us][BISHOP], move_list);
+        MoveGeneration::generateRookCaptures(occ, empty, their_state, gamestate.state.pieces[us][ROOK], move_list);
+        MoveGeneration::generateQueenCaptures(occ, empty, their_state, gamestate.state.pieces[us][QUEEN], move_list);
+        MoveGeneration::generateKingCaptures(their_state, gamestate.state.pieces[us][KING], move_list);
+    }
+
+    void generateAllMoves(const GameState &gamestate, MoveList &move_list)
+    {
+        generateAllCaptures(gamestate, move_list);
+        generateAllQuiets(gamestate, move_list);
+    }
+
     // std::pair<float, Move> search(int depth, float alpha, float beta)
     // {
     //     std::pair<float, Move> best_move
@@ -74,47 +113,37 @@ public:
         float curr_score{};
         Move best_move{};
 
-        Bitboard occ = gamestate.getFullState();
-        Bitboard empty = ~occ;
+        // Bitboard occ = gamestate.getFullState();
+        // Bitboard empty = ~occ;
 
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
 
-        Bitboard their_state = gamestate.getSideState(them);
+        // Bitboard their_state = gamestate.getSideState(them);
 
-        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-        Bitboard our_k_state = gamestate.state.pieces[us][KING];
+        // Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
+        // Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
+        // Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
+        // Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
+        // Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
+        // Bitboard our_k_state = gamestate.state.pieces[us][KING];
 
-        u8 castling_rights = gamestate.state.castlingRights;
-        Square en_passant_square = gamestate.state.enPassantSquare;
+        // u8 castling_rights = gamestate.state.castlingRights;
+        // Square en_passant_square = gamestate.state.enPassantSquare;
 
         MoveList move_list{};
 
-        MoveGeneration::generateAllMoves(
-            occ,
-            empty,
-            their_state,
-            us,
-            our_p_state,
-            our_n_state,
-            our_b_state,
-            our_r_state,
-            our_q_state,
-            our_k_state,
-            castling_rights,
-            en_passant_square,
-            move_list);
+        generateAllMoves(gamestate, move_list);
 
         int legal_moves = 0;
 
         std::array<float, 256> scores{};
 
         for (int i = 0; i < move_list.count; i++)
+        {
             scores[i] = get_move_score(move_list.moves[i]);
+            if (scores[i] == 0) break;
+        }
 
         for (int i = 0; i < move_list.count; i++)
         {
@@ -182,27 +211,27 @@ public:
         {
             return quiesce(alpha, beta);
         }
-        
+
         float max_score = -__FLT_MAX__;
         float curr_score{};
 
-        Bitboard occ = gamestate.getFullState();
-        Bitboard empty = ~occ;
+        // Bitboard occ = gamestate.getFullState();
+        // Bitboard empty = ~occ;
 
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
 
-        Bitboard their_state = gamestate.getSideState(them);
+        // Bitboard their_state = gamestate.getSideState(them);
 
-        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-        Bitboard our_k_state = gamestate.state.pieces[us][KING];
+        // Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
+        // Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
+        // Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
+        // Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
+        // Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
+        // Bitboard our_k_state = gamestate.state.pieces[us][KING];
 
-        u8 castling_rights = gamestate.state.castlingRights;
-        Square en_passant_square = gamestate.state.enPassantSquare;
+        // u8 castling_rights = gamestate.state.castlingRights;
+        // Square en_passant_square = gamestate.state.enPassantSquare;
 
         // int R = 3 + depth / 6;
 
@@ -223,27 +252,17 @@ public:
 
         MoveList move_list{};
 
-        MoveGeneration::generateAllMoves(
-            occ,
-            empty,
-            their_state,
-            us,
-            our_p_state,
-            our_n_state,
-            our_b_state,
-            our_r_state,
-            our_q_state,
-            our_k_state,
-            castling_rights,
-            en_passant_square,
-            move_list);
+        generateAllMoves(gamestate, move_list);
 
         int legal_moves = 0;
 
         std::array<float, 256> scores{};
 
         for (int i = 0; i < move_list.count; i++)
+        {
             scores[i] = get_move_score(move_list.moves[i]);
+            if (scores[i] == 0) break;
+        }
 
         for (int i = 0; i < move_list.count; i++)
         {
@@ -270,7 +289,7 @@ public:
             if (gamestate.make(curr_move, undo))
             {
                 legal_moves++;
-                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1, is_null_search); 
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1, is_null_search);
 
                 gamestate.unmake(curr_move, undo);
 
@@ -335,20 +354,7 @@ public:
 
         MoveList capture_list{};
 
-        MoveGeneration::generateAllCaptures(
-            occ,
-            empty,
-            their_state,
-            us,
-            our_p_state,
-            our_n_state,
-            our_b_state,
-            our_r_state,
-            our_q_state,
-            our_k_state,
-            castling_rights,
-            en_passant_square,
-            capture_list);
+        generateAllCaptures(gamestate, capture_list);
 
         if (capture_list.count == 0)
         {
@@ -387,7 +393,7 @@ public:
             if (gamestate.make(curr_move, undo))
             {
                 legal_captures++;
-                curr_score = -quiesce(-beta, -alpha);   
+                curr_score = -quiesce(-beta, -alpha);
                 gamestate.unmake(curr_move, undo);
 
                 if (curr_score > max_score)
@@ -482,7 +488,6 @@ public:
 
         // King safety eval
 
-
         return (material_eval + square_eval) * (us == WHITE ? 1 : -1);
     }
 
@@ -510,20 +515,7 @@ public:
 
         MoveList move_list{};
 
-        MoveGeneration::generateAllMoves(
-            occ,
-            empty,
-            their_state,
-            us,
-            our_p_state,
-            our_n_state,
-            our_b_state,
-            our_r_state,
-            our_q_state,
-            our_k_state,
-            castling_rights,
-            en_passant_square,
-            move_list);
+        generateAllMoves(gamestate, move_list);
 
         for (int i = 0; i < move_list.count; i++)
         {
@@ -569,20 +561,7 @@ public:
 
         MoveList move_list{};
 
-        MoveGeneration::generateAllMoves(
-            occ,
-            empty,
-            their_state,
-            us,
-            our_p_state,
-            our_n_state,
-            our_b_state,
-            our_r_state,
-            our_q_state,
-            our_k_state,
-            castling_rights,
-            en_passant_square,
-            move_list);
+        generateAllMoves(gamestate, move_list);
 
         if (depth == 0)
             return 1;

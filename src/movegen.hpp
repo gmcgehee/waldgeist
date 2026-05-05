@@ -7,7 +7,7 @@
 #include "bitboard.hpp"
 #include "types.hpp"
 #include "tables.hpp"
-#include "gamestate.hpp"
+// #include "gamestate.hpp"
 #include "../precalculation/bishop/bishop_pext_tables.hpp"
 #include "../precalculation/bishop/bishop_ray_masks.hpp"
 #include "../precalculation/rook/rook_pext_tables.hpp"
@@ -542,98 +542,77 @@ namespace MoveGeneration
         }
     }
 
-    void generateAllMoves(
-        Bitboard occ, Bitboard empty, Bitboard their_state, Side us,
-        Bitboard our_p_state, Bitboard our_n_state, Bitboard our_b_state,
-        Bitboard our_r_state, Bitboard our_q_state, Bitboard our_k_state,
-        u8 castling_rights, Square en_passant_square, MoveList &move_list)
-    {
+    // void generateAllMoves(
+    //     Bitboard occ, Bitboard empty, Bitboard their_state, Side us,
+    //     Bitboard our_p_state, Bitboard our_n_state, Bitboard our_b_state,
+    //     Bitboard our_r_state, Bitboard our_q_state, Bitboard our_k_state,
+    //     u8 castling_rights, Square en_passant_square, MoveList &move_list)
+    // {
 
-        generatePawnCaptures(their_state, our_p_state, us, en_passant_square, move_list);
-        generateKnightCaptures(their_state, our_n_state, move_list);
-        generatePawnPushes(empty, our_p_state, us, move_list);
-        generateKnightQuiets(empty, our_n_state, move_list);
-        generateBishopMoves(occ, empty, their_state, our_b_state, move_list);
-        generateRookMoves(occ, empty, their_state, our_r_state, move_list);
-        generateQueenMoves(occ, empty, their_state, our_q_state, move_list);
-        generateKingCaptures(their_state, our_k_state, move_list);
-        generateKingQuiets(empty, our_k_state, castling_rights, us, move_list);
-    }
+    //     generatePawnCaptures(their_state, our_p_state, us, en_passant_square, move_list);
+    //     generateKnightCaptures(their_state, our_n_state, move_list);
+    //     generatePawnPushes(empty, our_p_state, us, move_list);
+    //     generateKnightQuiets(empty, our_n_state, move_list);
+    //     generateBishopMoves(occ, empty, their_state, our_b_state, move_list);
+    //     generateRookMoves(occ, empty, their_state, our_r_state, move_list);
+    //     generateQueenMoves(occ, empty, their_state, our_q_state, move_list);
+    //     generateKingCaptures(their_state, our_k_state, move_list);
+    //     generateKingQuiets(empty, our_k_state, castling_rights, us, move_list);
+    // }
 
-    void generateAllCaptures(
-        Bitboard occ, Bitboard empty, Bitboard their_state, Side us,
-        Bitboard our_p_state, Bitboard our_n_state, Bitboard our_b_state,
-        Bitboard our_r_state, Bitboard our_q_state, Bitboard our_k_state,
-        u8 castling_rights, Square en_passant_square, MoveList &move_list)
-    {
+    // void generateAllCaptures(
+    //     Bitboard occ, Bitboard empty, Bitboard their_state, Side us,
+    //     Bitboard our_p_state, Bitboard our_n_state, Bitboard our_b_state,
+    //     Bitboard our_r_state, Bitboard our_q_state, Bitboard our_k_state,
+    //     u8 castling_rights, Square en_passant_square, MoveList &move_list)
+    // {
 
-        generatePawnCaptures(their_state, our_p_state, us, en_passant_square, move_list);
-        generateKnightCaptures(their_state, our_n_state, move_list);
-        generateBishopCaptures(occ, empty, their_state, our_b_state, move_list);
-        generateRookCaptures(occ, empty, their_state, our_r_state, move_list);
-        generateQueenCaptures(occ, empty, their_state, our_q_state, move_list);
-        generateKingCaptures(their_state, our_k_state, move_list);
-    }
+    //     generatePawnCaptures(their_state, our_p_state, us, en_passant_square, move_list);
+    //     generateKnightCaptures(their_state, our_n_state, move_list);
+    //     generateBishopCaptures(occ, empty, their_state, our_b_state, move_list);
+    //     generateRookCaptures(occ, empty, their_state, our_r_state, move_list);
+    //     generateQueenCaptures(occ, empty, their_state, our_q_state, move_list);
+    //     generateKingCaptures(their_state, our_k_state, move_list);
+    // }
 
-    void generateAllQuiets(const GameState &gamestate, MoveList &move_list)
-    {
-        Bitboard occ = gamestate.getFullState();
-        Bitboard empty = ~occ;
+    // void generateAllQuiets(const GameState &gamestate, MoveList &move_list)
+    // {
+    //     Bitboard occ = gamestate.getFullState();
+    //     Bitboard empty = ~occ;
 
-        Side us = gamestate.state.sideToPlay;
-        Side them = us == WHITE ? BLACK : WHITE;
+    //     Side us = gamestate.state.sideToPlay;
+    //     Side them = us == WHITE ? BLACK : WHITE;
 
-        generatePawnPushes(empty, gamestate.state.pieces[us][PAWN], us, move_list);
-        generateKnightQuiets(empty, gamestate.state.pieces[us][KNIGHT], move_list);
-        generateBishopQuiets(occ, empty, gamestate.state.pieces[us][BISHOP], move_list);
-        generateRookQuiets(occ, empty, gamestate.state.pieces[us][ROOK], move_list);
-        generateQueenQuiets(occ, empty, gamestate.state.pieces[us][QUEEN], move_list);
-        generateKingQuiets(empty, gamestate.state.pieces[us][KING], gamestate.state.castlingRights, us, move_list);
-    }
+    //     generatePawnPushes(empty, gamestate.state.pieces[us][PAWN], us, move_list);
+    //     generateKnightQuiets(empty, gamestate.state.pieces[us][KNIGHT], move_list);
+    //     generateBishopQuiets(occ, empty, gamestate.state.pieces[us][BISHOP], move_list);
+    //     generateRookQuiets(occ, empty, gamestate.state.pieces[us][ROOK], move_list);
+    //     generateQueenQuiets(occ, empty, gamestate.state.pieces[us][QUEEN], move_list);
+    //     generateKingQuiets(empty, gamestate.state.pieces[us][KING], gamestate.state.castlingRights, us, move_list);
+    // }
 
-    void generateAllCaptures(const GameState &gamestate, MoveList &move_list)
-    {
-        Bitboard occ = gamestate.getFullState();
-        Bitboard empty = ~occ;
+    // void generateAllCaptures(const GameState &gamestate, MoveList &move_list)
+    // {
+    //     Bitboard occ = gamestate.getFullState();
+    //     Bitboard empty = ~occ;
 
-        Side us = gamestate.state.sideToPlay;
-        Side them = us == WHITE ? BLACK : WHITE;
-        Bitboard their_state = gamestate.getSideState(them);
+    //     Side us = gamestate.state.sideToPlay;
+    //     Side them = us == WHITE ? BLACK : WHITE;
+    //     Bitboard their_state = gamestate.getSideState(them);
 
-        generatePawnCaptures(their_state, gamestate.state.pieces[us][PAWN], us, gamestate.state.enPassantSquare, move_list);
-        generateKnightCaptures(empty, gamestate.state.pieces[us][KNIGHT], move_list);
-        generateBishopCaptures(occ, empty, their_state, gamestate.state.pieces[us][BISHOP], move_list);
-        generateRookCaptures(occ, empty, their_state, gamestate.state.pieces[us][ROOK], move_list);
-        generateQueenCaptures(occ, empty, their_state, gamestate.state.pieces[us][QUEEN], move_list);
-        generateKingCaptures(their_state, gamestate.state.pieces[us][KING], move_list);
-    }
+    //     generatePawnCaptures(their_state, gamestate.state.pieces[us][PAWN], us, gamestate.state.enPassantSquare, move_list);
+    //     generateKnightCaptures(empty, gamestate.state.pieces[us][KNIGHT], move_list);
+    //     generateBishopCaptures(occ, empty, their_state, gamestate.state.pieces[us][BISHOP], move_list);
+    //     generateRookCaptures(occ, empty, their_state, gamestate.state.pieces[us][ROOK], move_list);
+    //     generateQueenCaptures(occ, empty, their_state, gamestate.state.pieces[us][QUEEN], move_list);
+    //     generateKingCaptures(their_state, gamestate.state.pieces[us][KING], move_list);
+    // }
 
-    void generateAllMoves(const GameState &gamestate, MoveList &move_list)
-    {
-        generateAllCaptures(gamestate, move_list);
-        generateAllQuiets(gamestate, move_list);
-
-    }
-
-    void generateAllMoves(GameState gamestate, MoveList &move_list)
-    {
-        Bitboard occ = gamestate.getFullState();
-        Bitboard empty = ~occ;
-
-        Side us = gamestate.state.sideToPlay;
-        Side them = (us == WHITE) ? BLACK : WHITE;
-
-        Bitboard their_state = gamestate.getSideState(them);
-
-        Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-        Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-        Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-        Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-        Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-        Bitboard our_k_state = gamestate.state.pieces[us][KING];
-
-        u8 castling_rights = gamestate.state.castlingRights;
-        Square en_passant_square = gamestate.state.enPassantSquare;
-    }
+    // void generateAllMoves(const GameState &gamestate, MoveList &move_list)
+    // {
+    //     generateAllCaptures(gamestate, move_list);
+    //     generateAllQuiets(gamestate, move_list);
+    // }
 
 }
+

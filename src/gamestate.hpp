@@ -17,6 +17,30 @@
 class GameState
 {
 
+private: // solves a weird dependency thing
+    inline Move localConvertToMove(Square destination, Square origin, PieceType promotion_piece = PAWN, SpecialMoveFlag flag = NONSPECIAL) const
+    {
+
+        // From official Stockfish code:
+        /// A move needs 16 bits to be stored
+        ///
+        /// bit  0- 5: destination square (from 0 to 63)
+        /// bit  6-11: origin square (from 0 to 63)
+        /// bit 12-13: promotion piece type - 2 (from KNIGHT-2 to QUEEN-2)
+        /// bit 14-15: special move flag: promotion (1), double push (2), castling (3)
+        /// NOTE: EN-PASSANT bit is set only when a pawn can be captured // wait, is this supposed to mean there is a pawn that can capture
+        //  ^^^^^^^^^^ does this mean it is set when a pawn is double pushed, or when en passant is performed in a capture? this is pretty crucial.
+
+        Move move = 0U;
+
+        move |= destination;
+        move |= origin << 6U;
+        move |= promotion_piece << 12U;
+        move |= flag << 14U;
+
+        return move;
+    }
+
 public:
     BoardState state;
     Mailbox mailbox{};
@@ -311,19 +335,25 @@ public:
     }
 
     // TODO: finish this (easy)
-    bool is_mate(Side us, Side them) const 
-    {
-        if (isSquareThreatened(__builtin_ctzll(state.pieces[us][KING]), them)) {
-            Undo undo{};
-            
-        }
-    }
+    // bool is_mate(Side us, Side them) const
+    // {
+    //     int legal_moves{};
+    //     MoveList move_list{};
+
+    //     generateAll
+
+    //     if (isSquareThreatened(__builtin_ctzll(state.pieces[us][KING]), them)) {
+    //         Undo undo{};
+
+    //     }
+
+    //     return
+    // }
 
     /// @brief  Moves one piece
     /// @param move A 16-bit integer. Bits 0-5 hold origin, 6-11 hold destination, and 12-16 include special move flags and promotion piece type (not in that order).
     bool make(Move move, Undo &undo)
     {
-
 
         // DECONSTRUCT THE MOVE
         Square destination = move & 0x3F;
@@ -743,7 +773,7 @@ public:
             }
         }
 
-        Move move = MoveGeneration::convertToMove(destination, origin, (PieceType)true_promotion_piece, flag);
+        Move move = localConvertToMove(destination, origin, (PieceType)true_promotion_piece, flag);
 
         // std::cout << "Converted move " << str_move << " to ";
         // printf("%b\n", move);  // Output: 1010
