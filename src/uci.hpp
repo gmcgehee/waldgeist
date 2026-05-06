@@ -145,7 +145,7 @@ void UCI()
                             if (args.size() == 3)
                             {
                             int movetime = std::stoi(args[2]);
-                            std::pair<float, Move> best_pair = engine->iterative_search(movetime, 8);
+                            std::pair<float, Move> best_pair = engine->iterative_search(movetime, 7);
                             std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
                             }
                         }
