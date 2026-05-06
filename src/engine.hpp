@@ -3,6 +3,7 @@
 #include <set>
 #include <vector>
 #include <bit>
+#include <chrono>
 
 #include "types.hpp"
 #include "bitboard.hpp"
@@ -82,7 +83,7 @@ public:
         Bitboard their_state = gamestate.getSideState(them);
 
         MoveGeneration::generatePawnCaptures(their_state, gamestate.state.pieces[us][PAWN], us, gamestate.state.enPassantSquare, move_list);
-        MoveGeneration::generateKnightCaptures(empty, gamestate.state.pieces[us][KNIGHT], move_list);
+        MoveGeneration::generateKnightCaptures(their_state, gamestate.state.pieces[us][KNIGHT], move_list);
         MoveGeneration::generateBishopCaptures(occ, empty, their_state, gamestate.state.pieces[us][BISHOP], move_list);
         MoveGeneration::generateRookCaptures(occ, empty, their_state, gamestate.state.pieces[us][ROOK], move_list);
         MoveGeneration::generateQueenCaptures(occ, empty, their_state, gamestate.state.pieces[us][QUEEN], move_list);
@@ -105,6 +106,21 @@ public:
     //     }
     //     return best_move;
     // }
+
+    std::pair<float, Move> iterative_search(int movetime, int max_depth) 
+    {
+        auto start = std::chrono::steady_clock::now();
+        std::pair<float, Move> best_move{};
+        for (int i = 1; i <= max_depth; i++) 
+        {
+            best_move = alpha_beta(i, -1'000'000, 1'000'000);
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() > movetime) 
+            {
+                return best_move;
+            }
+        }
+        return best_move;
+    }
 
     std::pair<float, Move> alpha_beta(int depth, float alpha, float beta, int ply = 0)
     {
@@ -197,7 +213,7 @@ public:
             return quiesce(alpha, beta);
         }
 
-        float max_score = -__FLT_MAX__;
+        float max_score = -10'000'000;
         float curr_score{};
 
         // Bitboard occ = gamestate.getFullState();
@@ -210,20 +226,20 @@ public:
 
         int R = 3 + depth / 6;
 
-        if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
-        {
-            if (eval() > beta)
-            {
-                float temp_score{};
-                Square en_passant_square = gamestate.state.enPassantSquare;
-                gamestate.make_null();
-                temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
-                gamestate.unmake_null(en_passant_square);
+        // if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
+        // {
+        //     if (eval() > beta)
+        //     {
+        //         float temp_score{};
+        //         Square en_passant_square = gamestate.state.enPassantSquare;
+        //         gamestate.make_null();
+        //         temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
+        //         gamestate.unmake_null(en_passant_square);
 
-                if (temp_score >= beta)
-                    return beta;
-            }
-        }
+        //         if (temp_score >= beta)
+        //             return beta;
+        //     }
+        // }
 
         MoveList move_list{};
 
@@ -463,7 +479,7 @@ public:
 
         // King safety eval
 
-        return (material_eval + square_eval) * (us == WHITE ? 1 : -1);
+        return (material_eval + 3 * square_eval) * (us == WHITE ? 1 : -1);
     }
 
     unsigned long long perft(int depth)
