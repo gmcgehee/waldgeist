@@ -108,28 +108,13 @@ public:
 
     std::pair<float, Move> alpha_beta(int depth, float alpha, float beta, int ply = 0)
     {
-
+        
         float max_score = -__FLT_MAX__;
         float curr_score{};
         Move best_move{};
 
-        // Bitboard occ = gamestate.getFullState();
-        // Bitboard empty = ~occ;
-
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
-
-        // Bitboard their_state = gamestate.getSideState(them);
-
-        // Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-        // Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-        // Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-        // Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-        // Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-        // Bitboard our_k_state = gamestate.state.pieces[us][KING];
-
-        // u8 castling_rights = gamestate.state.castlingRights;
-        // Square en_passant_square = gamestate.state.enPassantSquare;
 
         MoveList move_list{};
 
@@ -221,34 +206,24 @@ public:
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
 
-        // Bitboard their_state = gamestate.getSideState(them);
+        
 
-        // Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-        // Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-        // Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-        // Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-        // Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-        // Bitboard our_k_state = gamestate.state.pieces[us][KING];
+        int R = 3 + depth / 6;
 
-        // u8 castling_rights = gamestate.state.castlingRights;
-        // Square en_passant_square = gamestate.state.enPassantSquare;
+        if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
+        {
+            if (eval() > beta)
+            {
+                float temp_score{};
+                Square en_passant_square = gamestate.state.enPassantSquare;
+                gamestate.make_null();
+                temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
+                gamestate.unmake_null(en_passant_square);
 
-        // int R = 3 + depth / 6;
-
-        // if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
-        // {
-        //     if (eval() > beta)
-        //     {
-        //         float temp_score{};
-        //         Square en_passant_square = gamestate.state.enPassantSquare;
-        //         gamestate.make_null();
-        //         temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
-        //         gamestate.unmake_null(en_passant_square);
-
-        //         if (temp_score >= beta)
-        //             return beta;
-        //     }
-        // }
+                if (temp_score >= beta)
+                    return beta;
+            }
+        }
 
         MoveList move_list{};
 
@@ -450,7 +425,7 @@ public:
             while (curr_piece)
             {
                 Square sq = pop_lsb(curr_piece);
-                square_eval += PST[i][sq];
+                square_eval += PST[i][inverse_square(sq)];
             }
         }
 
@@ -460,7 +435,7 @@ public:
             while (curr_piece)
             {
                 Square sq = pop_lsb(curr_piece);
-                square_eval -= PST[i][inverse_square(sq)];
+                square_eval -= PST[i][sq];
             }
         }
 
