@@ -136,7 +136,7 @@ void UCI()
                             if (args.size() == 3)
                             {
                                 int search_depth = std::stoi(args[2]);
-                                std::pair<float, Move> best_pair = engine->alpha_beta(search_depth, -1'000'000, 1'000'000);
+                                std::pair<float, Move> best_pair = engine->alpha_beta(search_depth);
                                 std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
                             }
                         }
@@ -145,7 +145,7 @@ void UCI()
                             if (args.size() == 3)
                             {
                             int movetime = std::stoi(args[2]);
-                            std::pair<float, Move> best_pair = engine->iterative_search(movetime, 7);
+                            std::pair<float, Move> best_pair = engine->iterative_search(10, movetime);
                             std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
                             }
                         }

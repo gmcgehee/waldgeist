@@ -107,24 +107,36 @@ public:
     //     return best_move;
     // }
 
-    std::pair<float, Move> iterative_search(int movetime, int max_depth) 
+    std::pair<float, Move> iterative_search(int max_depth, int movetime)
     {
         auto start = std::chrono::steady_clock::now();
         std::pair<float, Move> best_move{};
-        for (int i = 1; i <= max_depth; i++) 
+        std::pair<float, Move> new_best_move{};
+        for (int depth = 1; depth <= max_depth; depth++)
         {
-            best_move = alpha_beta(i, -1'000'000, 1'000'000);
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() > movetime) 
+            std::cout << "Current depth: " << depth << '\n';
+
+            auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+            // the issue is that this will return in the middle of whatever depth alpha_beta is currently in, meaning that depth might not be very good yet.
+            // we'd want to use the previous best found move, probably
+            new_best_move = alpha_beta(depth, movetime - time_elapsed);
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() > movetime)
             {
                 return best_move;
             }
+            best_move = new_best_move;
         }
         return best_move;
     }
 
-    std::pair<float, Move> alpha_beta(int depth, float alpha, float beta, int ply = 0)
+    std::pair<float, Move> alpha_beta(int depth, int time_left = __INT_MAX__)
     {
-        
+
+        auto start = std::chrono::steady_clock::now();
+
+        float alpha = -1'000'000;
+        float beta = 1'000'000;
+
         float max_score = -__FLT_MAX__;
         float curr_score{};
         Move best_move{};
@@ -143,11 +155,16 @@ public:
         for (int i = 0; i < move_list.count; i++)
         {
             scores[i] = get_move_score(move_list.moves[i]);
-            if (scores[i] == 0) break;
+            if (scores[i] == 0)
+                break;
         }
 
         for (int i = 0; i < move_list.count; i++)
         {
+
+            auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+
+            if (time_left - time_elapsed <= 0) return std::pair<float, Move>{max_score, best_move};
 
             int best_score_index{i};
             float best_move_score{scores[i]};
@@ -172,7 +189,7 @@ public:
             {
 
                 legal_moves++;
-                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1);
+                curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, 1);
                 // std::cout << MoveGeneration::moveToString(curr_move) << ": " << curr_score << '\n';
 
                 gamestate.unmake(curr_move, undo);
@@ -195,7 +212,7 @@ public:
         if (legal_moves == 0)
         {
             if (gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them))
-                return std::pair<float, Move>{-MATE_SCORE + ply, best_move};
+                return std::pair<float, Move>{-MATE_SCORE, best_move};
             else
             {
                 return std::pair<float, Move>{0, best_move};
@@ -221,8 +238,6 @@ public:
 
         Side us = gamestate.state.sideToPlay;
         Side them = (us == WHITE) ? BLACK : WHITE;
-
-        
 
         int R = 3 + depth / 6;
 
@@ -252,7 +267,8 @@ public:
         for (int i = 0; i < move_list.count; i++)
         {
             scores[i] = get_move_score(move_list.moves[i]);
-            if (scores[i] == 0) break;
+            if (scores[i] == 0)
+                break;
         }
 
         for (int i = 0; i < move_list.count; i++)
