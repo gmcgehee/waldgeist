@@ -1,9 +1,9 @@
 #pragma once
 
-#include <set>
-#include <vector>
 #include <bit>
 #include <chrono>
+#include <cstring>
+
 
 #include "types.hpp"
 #include "bitboard.hpp"
@@ -14,12 +14,22 @@
 
 class Engine
 {
+
+private:
+    // the idea is that when the best move is found for a certain ply/depth (?), pv_table at that is set for the best move 
+    Move pv_table[256]{};
+
 public:
     GameState gamestate;
 
     Engine()
     {
         gamestate = GameState();
+    }
+
+    void reset() 
+    {
+        std::memset(pv_table, 0, 256 * sizeof(pv_table[0]));
     }
 
     inline Square get_destination_square(Move move)
@@ -96,17 +106,6 @@ public:
         generateAllQuiets(gamestate, move_list);
     }
 
-    // std::pair<float, Move> search(int depth, float alpha, float beta)
-    // {
-    //     std::pair<float, Move> best_move
-    //     for (int depth = 1; depth <= max_ply; depth++)
-    //     {
-    //         std = alpha_beta(depth, alpha, beta);
-    //         best_move = move;
-    //     }
-    //     return best_move;
-    // }
-
     std::pair<float, Move> iterative_search(int max_depth, int movetime)
     {
         auto start = std::chrono::steady_clock::now();
@@ -114,7 +113,7 @@ public:
         std::pair<float, Move> new_best_move{};
         for (int depth = 1; depth <= max_depth; depth++)
         {
-            std::cout << "Current depth: " << depth << '\n';
+            // std::cout << "Current depth: " << depth << '\n';
 
             auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
             // the issue is that this will return in the middle of whatever depth alpha_beta is currently in, meaning that depth might not be very good yet.
@@ -164,11 +163,10 @@ public:
 
             auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
 
-            if (time_left - time_elapsed <= 0) return std::pair<float, Move>{max_score, best_move};
-
+            
             int best_score_index{i};
             float best_move_score{scores[i]};
-
+            
             for (int j = i + 1; j < move_list.count; j++)
             {
                 if (scores[j] > best_move_score)
@@ -177,30 +175,33 @@ public:
                     best_score_index = j;
                 }
             }
-
+            
             std::swap(move_list.moves[i], move_list.moves[best_score_index]);
             std::swap(scores[i], scores[best_score_index]);
 
             Move curr_move = move_list.moves[i];
-
+            
             Undo undo;
-
+            
             if (gamestate.make(curr_move, undo))
             {
-
+                
                 legal_moves++;
                 curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, 1);
                 // std::cout << MoveGeneration::moveToString(curr_move) << ": " << curr_score << '\n';
-
+                
                 gamestate.unmake(curr_move, undo);
-
+                
+                
                 if (curr_score > max_score)
                 {
                     max_score = curr_score;
                     best_move = curr_move;
                 }
-
+                
                 alpha = curr_score > alpha ? curr_score : alpha;
+                
+                if (time_left - time_elapsed <= 0) return std::pair<float, Move>{max_score, best_move == 0 ? move_list.moves[0] : best_move};
 
                 if (alpha >= beta)
                 {
@@ -241,20 +242,20 @@ public:
 
         int R = 3 + depth / 6;
 
-        // if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
-        // {
-        //     if (eval() > beta)
-        //     {
-        //         float temp_score{};
-        //         Square en_passant_square = gamestate.state.enPassantSquare;
-        //         gamestate.make_null();
-        //         temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
-        //         gamestate.unmake_null(en_passant_square);
+        if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
+        {
+            if (eval() > beta)
+            {
+                float temp_score{};
+                Square en_passant_square = gamestate.state.enPassantSquare;
+                gamestate.make_null();
+                temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
+                gamestate.unmake_null(en_passant_square);
 
-        //         if (temp_score >= beta)
-        //             return beta;
-        //     }
-        // }
+                if (temp_score >= beta)
+                    return beta;
+            }
+        }
 
         MoveList move_list{};
 

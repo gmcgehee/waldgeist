@@ -144,10 +144,33 @@ void UCI()
                         {
                             if (args.size() == 3)
                             {
-                            int movetime = std::stoi(args[2]);
-                            std::pair<float, Move> best_pair = engine->iterative_search(10, movetime);
-                            std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
+                                int movetime = std::stoi(args[2]);
+                                std::pair<float, Move> best_pair = engine->iterative_search(10, movetime);
+                                std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
                             }
+                        }
+                        else if (args[1] == "wtime")
+                        {
+
+                            Side to_play = engine->gamestate.state.sideToPlay;
+
+                            int wtime = std::stoi(args[2]);
+                            int btime = std::stoi(args[4]);
+                            int movetime = to_play == WHITE ? wtime : btime;
+                            std::pair<float, Move> best_pair = engine->iterative_search(15, movetime / 30);
+                            std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
+                        }
+                        else if (args[1] == "btime")
+                        {
+
+                            Side to_play = engine->gamestate.state.sideToPlay;
+
+                            int wtime = std::stoi(args[4]);
+                            int btime = std::stoi(args[2]);
+                            int movetime = to_play == WHITE ? wtime : btime;
+
+                            std::pair<float, Move> best_pair = engine->iterative_search(15, movetime / 30);
+                            std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
                         }
                     }
                 }
@@ -155,6 +178,10 @@ void UCI()
                 {
                     for (int i = 0; i < 100; i++)
                         std::cout << '\n';
+                }
+                else if (args[0] == "ucinewgame")
+                {
+                    engine->reset();
                 }
                 else
                 {
