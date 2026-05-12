@@ -13,6 +13,8 @@
 #include "movegen.hpp"
 #include "engine.hpp"
 
+constexpr float PING_OFFSET = 600;
+
 void UCI()
 {
     std::cout << "\nWaldgeist Engine\n";
@@ -136,8 +138,8 @@ void UCI()
                             if (args.size() == 3)
                             {
                                 int search_depth = std::stoi(args[2]);
-                                std::pair<float, Move> best_pair = engine->alpha_beta(search_depth);
-                                std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
+                                std::pair<float, Move> best_pair = engine->iterative_search(search_depth);
+                                std::cout << "bestmove " << moveToString(best_pair.second) << '\n';
                             }
                         }
                         else if (args[1] == "movetime")
@@ -146,7 +148,7 @@ void UCI()
                             {
                                 int movetime = std::stoi(args[2]);
                                 std::pair<float, Move> best_pair = engine->iterative_search(10, movetime);
-                                std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
+                                std::cout << "bestmove " << moveToString(best_pair.second) << '\n';
                             }
                         }
                         else if (args[1] == "wtime")
@@ -157,8 +159,8 @@ void UCI()
                             int wtime = std::stoi(args[2]);
                             int btime = std::stoi(args[4]);
                             int movetime = to_play == WHITE ? wtime : btime;
-                            std::pair<float, Move> best_pair = engine->iterative_search(15, movetime / 30);
-                            std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
+                            std::pair<float, Move> best_pair = engine->iterative_search(15, movetime / 30 - PING_OFFSET);
+                            std::cout << "bestmove " << moveToString(best_pair.second) << '\n';
                         }
                         else if (args[1] == "btime")
                         {
@@ -169,8 +171,8 @@ void UCI()
                             int btime = std::stoi(args[2]);
                             int movetime = to_play == WHITE ? wtime : btime;
 
-                            std::pair<float, Move> best_pair = engine->iterative_search(15, movetime / 30);
-                            std::cout << "bestmove " << MoveGeneration::moveToString(best_pair.second) << '\n';
+                            std::pair<float, Move> best_pair = engine->iterative_search(15, movetime / 30 - PING_OFFSET);
+                            std::cout << "bestmove " << moveToString(best_pair.second) << '\n';
                         }
                     }
                 }

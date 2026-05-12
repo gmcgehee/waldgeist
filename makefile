@@ -1,2 +1,3 @@
-main: src/main.cpp
-	g++ -O3 -Ofast -march=native -mtune=native -flto -funroll-loops -fomit-frame-pointer -ffast-math -fno-rtti -std=c++20 src/main.cpp -o waldgeist
+main: src/bitboard.cpp src/debug.cpp src/eval.cpp src/gamestate.cpp src/main.cpp src/movegen.cpp src/perft.cpp src/search.cpp
+	g++ -O3 -Ofast -march=native -mtune=native -flto -funroll-loops -fomit-frame-pointer -ffast-math -fno-rtti -std=c++20 \
+	src/bitboard.cpp src/debug.cpp src/eval.cpp src/gamestate.cpp src/main.cpp src/movegen.cpp src/perft.cpp src/search.cpp -o waldgeist
