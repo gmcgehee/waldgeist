@@ -1,4 +1,6 @@
 #include <iostream>
+#include <thread>
+#include <atomic>
 
 #include "engine.hpp"
 #include "tables.hpp"
@@ -69,7 +71,7 @@ float Engine::get_move_score(Move move)
     return MVV_LVA[destination_piece][origin_piece];
 }
 
-std::array<float, 256> Engine::get_all_move_scores(MoveList& move_list)
+std::array<float, 256> Engine::get_all_move_scores(MoveList &move_list)
 {
 
     std::array<float, 256> scores;
@@ -133,11 +135,10 @@ std::pair<float, Move> Engine::iterative_search(int max_depth, int movetime)
         }
 
         std::cout << "info depth " << depth
-                  << " score cp " << best_move.second
+                  << " score cp " << static_cast<int>(best_move.second)
                   << '\n';
 
         best_move = curr_best_move;
-        
     }
 
     this->movetime = 0;
@@ -150,7 +151,6 @@ std::pair<float, Move> Engine::alpha_beta(int depth)
     float alpha = -1'000'000;
     float beta = 1'000'000;
 
-    float max_score = -__FLT_MAX__;
     float curr_score{};
     Move best_move{};
 
@@ -163,20 +163,13 @@ std::pair<float, Move> Engine::alpha_beta(int depth)
 
     int legal_moves = 0;
 
-    std::array<float, 256> scores{};
-
-    for (int i = 0; i < move_list.count; i++)
-    {
-        scores[i] = get_move_score(move_list.moves[i]);
-        if (scores[i] == 0)
-            break;
-    }
+    std::array<float, 256> scores = get_all_move_scores(move_list);
 
     for (int i = 0; i < move_list.count; i++)
     {
 
         if (time_up())
-            return std::pair<float, Move>{max_score, best_move == 0 ? move_list.moves[0] : best_move};
+            return std::pair<float, Move>{alpha, best_move == 0 ? move_list.moves[0] : best_move};
 
         swap_best_move_to_index(move_list, i, scores);
 
@@ -189,21 +182,18 @@ std::pair<float, Move> Engine::alpha_beta(int depth)
 
             legal_moves++;
             curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, 1);
-            // std::cout << moveToString(curr_move) << ": " << curr_score << '\n';
 
             gamestate.unmake(curr_move, undo);
 
-            if (curr_score > max_score)
+            if (curr_score > alpha)
             {
-                max_score = curr_score;
+                alpha = curr_score;
                 best_move = curr_move;
-            }
 
-            alpha = curr_score > alpha ? curr_score : alpha;
-
-            if (alpha >= beta)
-            {
-                break;
+                if (alpha >= beta)
+                {
+                    break;
+                }
             }
         }
     }
@@ -218,7 +208,7 @@ std::pair<float, Move> Engine::alpha_beta(int depth)
         }
     }
 
-    return std::pair<float, Move>{max_score, best_move};
+    return std::pair<float, Move>{alpha, best_move};
 }
 
 float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, bool is_null_search)
@@ -230,7 +220,6 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
         // return eval();
     }
 
-    float max_score = -10'000'000;
     float curr_score{};
 
     // Bitboard occ = gamestate.getFullState();
@@ -241,20 +230,20 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
 
     int R = 3 + depth / 6;
 
-    // if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
-    // {
-    //     if (eval() > beta)
-    //     {
-    //         float temp_score{};
-    //         Square en_passant_square = gamestate.state.enPassantSquare;
-    //         gamestate.make_null();
-    //         temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
-    //         gamestate.unmake_null(en_passant_square);
+    if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
+    {
+        if (eval() > beta)
+        {
+            float temp_score{};
+            Square en_passant_square = gamestate.state.enPassantSquare;
+            gamestate.make_null();
+            temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
+            gamestate.unmake_null(en_passant_square);
 
-    //         if (temp_score >= beta)
-    //             return beta;
-    //     }
-    // }
+            if (temp_score >= beta)
+                return beta;
+        }
+    }
 
     MoveList move_list{};
 
@@ -263,7 +252,6 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
     int legal_moves = 0;
 
     std::array<float, 256> scores = get_all_move_scores(move_list);
-
 
     for (int i = 0; i < move_list.count; i++)
     {
@@ -283,11 +271,6 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
             curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1, is_null_search);
 
             gamestate.unmake(curr_move, undo);
-
-            if (curr_score > max_score)
-            {
-                max_score = curr_score;
-            }
 
             alpha = curr_score > alpha ? curr_score : alpha;
 
@@ -317,31 +300,13 @@ float Engine::quiesce(float alpha, float beta)
     float stand_pat = eval();
 
     if (stand_pat >= beta)
-        return beta;
+        return stand_pat;
 
     if (stand_pat > alpha)
         alpha = stand_pat;
 
     float max_score = stand_pat;
     float curr_score{};
-
-    Bitboard occ = gamestate.getFullState();
-    Bitboard empty = ~occ;
-
-    Side us = gamestate.state.sideToPlay;
-    Side them = (us == WHITE) ? BLACK : WHITE;
-
-    Bitboard their_state = gamestate.getSideState(them);
-
-    Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-    Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-    Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-    Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-    Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-    Bitboard our_k_state = gamestate.state.pieces[us][KING];
-
-    u8 castling_rights = gamestate.state.castlingRights;
-    Square en_passant_square = gamestate.state.enPassantSquare;
 
     MoveList capture_list{};
 
@@ -354,10 +319,7 @@ float Engine::quiesce(float alpha, float beta)
 
     int legal_captures{};
 
-    std::array<float, 256> scores{};
-
-    for (int i = 0; i < capture_list.count; i++)
-        scores[i] = get_move_score(capture_list.moves[i]);
+    std::array<float, 256> scores = get_all_move_scores(capture_list);
 
     for (int i = 0; i < capture_list.count; i++)
     {
@@ -372,6 +334,8 @@ float Engine::quiesce(float alpha, float beta)
             legal_captures++;
             curr_score = -quiesce(-beta, -alpha);
             gamestate.unmake(curr_move, undo);
+
+            if (time_up()) return 0;
 
             if (curr_score > max_score)
             {
