@@ -305,7 +305,6 @@ float Engine::quiesce(float alpha, float beta)
     if (stand_pat > alpha)
         alpha = stand_pat;
 
-    float max_score = stand_pat;
     float curr_score{};
 
     MoveList capture_list{};
@@ -335,18 +334,18 @@ float Engine::quiesce(float alpha, float beta)
             curr_score = -quiesce(-beta, -alpha);
             gamestate.unmake(curr_move, undo);
 
-            if (time_up()) return 0;
+            if (time_up())
+                return 0;
 
-            if (curr_score > max_score)
+            if (curr_score > alpha)
             {
-                max_score = curr_score;
+                if (curr_score >= beta)
+                {
+                    return beta;
+                }
+                alpha = curr_score;
             }
 
-            if (curr_score >= beta)
-            {
-                break;
-            }
-            alpha = curr_score > alpha ? curr_score : alpha;
         }
     }
 
