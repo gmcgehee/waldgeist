@@ -288,7 +288,7 @@ constexpr int MVV_LVA[6][6] = {
     /* BISHOP*/ { 3100, 2900, 2880, 2700, 2300, -7700 },
     /* ROOK  */ { 4900, 4700, 4680, 4500, 4100, -5900 },
     /* QUEEN */ { 8900, 8700, 8680, 8500, 8100, -1900 },
-    /* KING  */ { 99900,99700,99680,99500,99100,     0 }
+    /* KING  */ { 99900,99700,99680,99500,99100,    0 }
 };
 
 // from chessprogramming; these tables are reversed, so index 0 is not a1 but h1
