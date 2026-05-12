@@ -69,6 +69,39 @@ float Engine::get_move_score(Move move)
     return MVV_LVA[destination_piece][origin_piece];
 }
 
+std::array<float, 256> Engine::get_all_move_scores(MoveList& move_list)
+{
+
+    std::array<float, 256> scores;
+
+    for (int i = 0; i < move_list.count; i++)
+    {
+        scores[i] = get_move_score(move_list.moves[i]);
+        if (scores[i] == 0)
+            break;
+    }
+
+    return scores;
+}
+
+void Engine::swap_best_move_to_index(MoveList &move_list, int idx, std::array<float, 256> scores)
+{
+    int best_score_index{idx};
+    float best_move_score{-1000000};
+
+    for (int j = idx + 1; j < move_list.count; j++)
+    {
+        if (scores[j] > best_move_score)
+        {
+            best_move_score = scores[j];
+            best_score_index = j;
+        }
+    }
+
+    std::swap(move_list.moves[idx], move_list.moves[best_score_index]);
+    std::swap(scores[idx], scores[best_score_index]);
+}
+
 /************************\
 
           Search
@@ -81,7 +114,7 @@ std::pair<float, Move> Engine::iterative_search(int max_depth, int movetime)
     this->movetime = movetime;
 
     std::pair<float, Move> best_move{};
-    std::pair<float, Move> new_best_move{};
+
     for (int depth = 1; depth <= max_depth; depth++)
     {
         if (time_up())
@@ -96,13 +129,12 @@ std::pair<float, Move> Engine::iterative_search(int max_depth, int movetime)
             return best_move;
         }
 
-        new_best_move = alpha_beta(depth);
+        best_move = alpha_beta(depth);
 
         std::cout << "info depth " << depth
-                  << " score cp " << new_best_move.second
+                  << " score cp " << best_move.second
                   << '\n';
 
-        best_move = new_best_move;
     }
 
     this->movetime = 0;
@@ -143,20 +175,7 @@ std::pair<float, Move> Engine::alpha_beta(int depth)
         if (time_up())
             return std::pair<float, Move>{max_score, best_move == 0 ? move_list.moves[0] : best_move};
 
-        int best_score_index{i};
-        float best_move_score{scores[i]};
-
-        for (int j = i + 1; j < move_list.count; j++)
-        {
-            if (scores[j] > best_move_score)
-            {
-                best_move_score = scores[j];
-                best_score_index = j;
-            }
-        }
-
-        std::swap(move_list.moves[i], move_list.moves[best_score_index]);
-        std::swap(scores[i], scores[best_score_index]);
+        swap_best_move_to_index(move_list, i, scores);
 
         Move curr_move = move_list.moves[i];
 
@@ -240,35 +259,16 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
 
     int legal_moves = 0;
 
-    std::array<float, 256> scores{};
+    std::array<float, 256> scores = get_all_move_scores(move_list);
 
-    for (int i = 0; i < move_list.count; i++)
-    {
-        scores[i] = get_move_score(move_list.moves[i]);
-        if (scores[i] == 0)
-            break;
-    }
 
     for (int i = 0; i < move_list.count; i++)
     {
 
         if (time_up())
-            return max_score;
+            return alpha;
 
-        int best_score_index{i};
-        float best_move_score{-1000000};
-
-        for (int j = i + 1; j < move_list.count; j++)
-        {
-            if (scores[j] > best_move_score)
-            {
-                best_move_score = scores[j];
-                best_score_index = j;
-            }
-        }
-
-        std::swap(move_list.moves[i], move_list.moves[best_score_index]);
-        std::swap(scores[i], scores[best_score_index]);
+        swap_best_move_to_index(move_list, i, scores);
 
         Move curr_move = move_list.moves[i];
 
@@ -305,7 +305,7 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
         }
     }
 
-    return max_score;
+    return alpha;
 }
 
 float Engine::quiesce(float alpha, float beta)
@@ -358,21 +358,7 @@ float Engine::quiesce(float alpha, float beta)
 
     for (int i = 0; i < capture_list.count; i++)
     {
-
-        int best_score_index{i};
-        float best_move_score{scores[i]};
-
-        for (int j = i + 1; j < capture_list.count; j++)
-        {
-            if (scores[j] > best_move_score)
-            {
-                best_move_score = scores[j];
-                best_score_index = j;
-            }
-        }
-
-        std::swap(capture_list.moves[i], capture_list.moves[best_score_index]);
-        std::swap(scores[i], scores[best_score_index]);
+        swap_best_move_to_index(capture_list, i, scores);
 
         Move curr_move = capture_list.moves[i];
 
@@ -397,5 +383,5 @@ float Engine::quiesce(float alpha, float beta)
         }
     }
 
-    return max_score;
+    return alpha;
 }
