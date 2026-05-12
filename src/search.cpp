@@ -114,9 +114,12 @@ std::pair<float, Move> Engine::iterative_search(int max_depth, int movetime)
     this->movetime = movetime;
 
     std::pair<float, Move> best_move{};
+    std::pair<float, Move> curr_best_move{};
 
     for (int depth = 1; depth <= max_depth; depth++)
     {
+        curr_best_move = alpha_beta(depth);
+
         if (time_up())
         {
             // auto end = std::chrono::steady_clock::now();
@@ -129,12 +132,12 @@ std::pair<float, Move> Engine::iterative_search(int max_depth, int movetime)
             return best_move;
         }
 
-        best_move = alpha_beta(depth);
-
         std::cout << "info depth " << depth
                   << " score cp " << best_move.second
                   << '\n';
 
+        best_move = curr_best_move;
+        
     }
 
     this->movetime = 0;
