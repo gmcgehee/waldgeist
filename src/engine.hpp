@@ -30,6 +30,10 @@ public:
 
     float get_move_score(Move move);
 
+    void swap_best_move_to_index(MoveList &move_list, int idx, std::array<float, 256> scores);
+
+    std::array<float, 256> get_all_move_scores(MoveList& move_list);
+
     void generateAllQuiets(const GameState &gamestate, MoveList &move_list);
 
     void generateAllCaptures(const GameState &gamestate, MoveList &move_list);
