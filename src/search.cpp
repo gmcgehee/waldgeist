@@ -135,7 +135,7 @@ std::pair<float, Move> Engine::iterative_search(int max_depth, int movetime)
         }
 
         std::cout << "info depth " << depth
-                  << " score cp " << static_cast<int>(best_move.second)
+                  << " score cp " << static_cast<int>(best_move.first) * (gamestate.state.sideToPlay == WHITE ? 1 : -1) // scored from white's perspective always
                   << '\n';
 
         best_move = curr_best_move;
@@ -177,11 +177,23 @@ std::pair<float, Move> Engine::alpha_beta(int depth)
 
         Undo undo;
 
+        /*
+        
+            Threading: 
+
+            We have n threads. We want to copy the gamestate once for each thread 
+            and have it search move_list.count / n moves. In the future, this may
+            need to be modified to account for some trees simply being bigger. No
+            significant increase if one thread is searching a huge tree while the
+            other several have already finished searching a few very shallow ones
+        
+        */
+
         if (gamestate.make(curr_move, undo))
         {
 
             legal_moves++;
-            curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, 1);
+            curr_score = -alpha_beta_recursion(gamestate, depth - 1, -beta, -alpha, 1);
 
             gamestate.unmake(curr_move, undo);
 
@@ -211,34 +223,35 @@ std::pair<float, Move> Engine::alpha_beta(int depth)
     return std::pair<float, Move>{alpha, best_move};
 }
 
-float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, bool is_null_search)
+float Engine::alpha_beta_recursion(GameState& node_gamestate, int depth, float alpha, float beta, int ply, bool is_null_search)
 {
 
     if (depth == 0)
     {
-        return quiesce(alpha, beta); // TODO
-        // return eval();
+        return quiesce(node_gamestate, alpha, beta);
     }
 
     float curr_score{};
 
-    // Bitboard occ = gamestate.getFullState();
-    // Bitboard empty = ~occ;
+    // TODO: what you're working on right now is multithreading. what that means
+    //       for this case is that you need to pass copies (deep copies) of the 
+    //       current gamestate into alpha_beta_recursion. Recall that you have 
+    //       pieces with pointers to bitboards, and we don't want the address of those bitboards.
 
     Side us = gamestate.state.sideToPlay;
     Side them = (us == WHITE) ? BLACK : WHITE;
 
     int R = 3 + depth / 6;
 
-    if (!gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
+    if (!node_gamestate.isSquareThreatened(__builtin_ctzll(node_gamestate.state.pieces[us][KING]), them) && get_non_pawn_material(us) > 0 && depth >= R + 1 && !is_null_search)
     {
         if (eval() > beta)
         {
             float temp_score{};
-            Square en_passant_square = gamestate.state.enPassantSquare;
-            gamestate.make_null();
-            temp_score = -alpha_beta_recursion(depth - 1 - R, -beta, -beta + 1, ply + 1, true);
-            gamestate.unmake_null(en_passant_square);
+            Square en_passant_square = node_gamestate.state.enPassantSquare;
+            node_gamestate.make_null();
+            temp_score = -alpha_beta_recursion(node_gamestate, depth - 1 - R, -beta, -beta + 1, ply + 1, true);
+            node_gamestate.unmake_null(en_passant_square);
 
             if (temp_score >= beta)
                 return beta;
@@ -247,7 +260,7 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
 
     MoveList move_list{};
 
-    generateAllMoves(gamestate, move_list);
+    generateAllMoves(node_gamestate, move_list);
 
     int legal_moves = 0;
 
@@ -265,12 +278,12 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
 
         Undo undo;
 
-        if (gamestate.make(curr_move, undo))
+        if (node_gamestate.make(curr_move, undo))
         {
             legal_moves++;
-            curr_score = -alpha_beta_recursion(depth - 1, -beta, -alpha, ply + 1, is_null_search);
+            curr_score = -alpha_beta_recursion(node_gamestate, depth - 1, -beta, -alpha, ply + 1, is_null_search);
 
-            gamestate.unmake(curr_move, undo);
+            node_gamestate.unmake(curr_move, undo);
 
             alpha = curr_score > alpha ? curr_score : alpha;
 
@@ -283,7 +296,7 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
 
     if (legal_moves == 0)
     {
-        if (gamestate.isSquareThreatened(__builtin_ctzll(gamestate.state.pieces[us][KING]), them))
+        if (gamestate.isSquareThreatened(__builtin_ctzll(node_gamestate.state.pieces[us][KING]), them))
             return -MATE_SCORE + ply;
         else
         {
@@ -294,7 +307,7 @@ float Engine::alpha_beta_recursion(int depth, float alpha, float beta, int ply, 
     return alpha;
 }
 
-float Engine::quiesce(float alpha, float beta)
+float Engine::quiesce(GameState& node_gamestate, float alpha, float beta)
 {
 
     float stand_pat = eval();
@@ -309,7 +322,7 @@ float Engine::quiesce(float alpha, float beta)
 
     MoveList capture_list{};
 
-    generateAllCaptures(gamestate, capture_list);
+    generateAllCaptures(node_gamestate, capture_list);
 
     if (capture_list.count == 0)
     {
@@ -331,7 +344,7 @@ float Engine::quiesce(float alpha, float beta)
         if (gamestate.make(curr_move, undo))
         {
             legal_captures++;
-            curr_score = -quiesce(-beta, -alpha);
+            curr_score = -quiesce(node_gamestate, -beta, -alpha);
             gamestate.unmake(curr_move, undo);
 
             if (time_up())

@@ -11,8 +11,10 @@ class Engine
 
 private:
     // the idea is that when the best move is found for a certain ply/depth (?), pv_table at that is set for the best move
+    
     Move pv_table[256]{};
     int movetime{};
+    int THREAD_COUNT{1};
     std::chrono::steady_clock::time_point start_time{};
 
 public:
@@ -46,9 +48,9 @@ public:
 
     std::pair<float, Move> alpha_beta(int depth);
 
-    float alpha_beta_recursion(int depth, float alpha, float beta, int ply, bool is_null_search = false);
+    float alpha_beta_recursion(GameState& node_gamestate, int depth, float alpha, float beta, int ply, bool is_null_search = false);
 
-    float quiesce(float alpha, float beta);
+    float quiesce(GameState& node_gamestate, float alpha, float beta);
 
     float get_non_pawn_material(Side us);
 
