@@ -189,6 +189,13 @@ std::pair<float, Move> Engine::alpha_beta(int depth)
         
         */
 
+        std::vector<GameState> gamestate_list(THREAD_COUNT);
+
+        for (size_t thread_i = 0; thread_i < THREAD_COUNT; thread_i++)
+        {
+            gamestate_list.push_back(GameState(gamestate));
+        }
+
         if (gamestate.make(curr_move, undo))
         {
 

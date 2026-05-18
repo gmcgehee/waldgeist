@@ -14,7 +14,7 @@ private:
     
     Move pv_table[256]{};
     int movetime{};
-    int THREAD_COUNT{1};
+    size_t THREAD_COUNT{1};
     std::chrono::steady_clock::time_point start_time{};
 
 public:

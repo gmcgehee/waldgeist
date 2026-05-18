@@ -43,6 +43,19 @@ GameState::GameState(std::string fen)
     }
 }
 
+GameState::GameState(const GameState& obj)
+{
+    state = obj.state;
+    mailbox = obj.mailbox;
+
+    for (size_t i = 0; i < 64; i++)
+    {
+        Piece& piece = mailbox[i];
+
+        if (piece.piece_type != EMPTY) piece.piece_bb = &state.pieces[piece.color][piece.piece_type];
+    }
+}
+
 void GameState::loadDefaultBoard()
 {
     // Convenience method

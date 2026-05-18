@@ -14,6 +14,8 @@ public:
 
     GameState(std::string fen = "");
 
+    GameState(const GameState& obj);
+
     void loadDefaultBoard();
 
     // GPT generated
