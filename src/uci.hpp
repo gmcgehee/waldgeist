@@ -185,6 +185,22 @@ void UCI()
                 {
                     engine->reset();
                 }
+                else if (args[0] == "setoption")
+                {
+                    if (args.size() >= 4)
+                    {
+                        if (args[1] == "name")
+                        {
+                            if (args[2] == "Threads")
+                            {
+                                if (args[3] == "value") {
+                                    size_t thread_count = static_cast<size_t>(std::stoull(args[4]));
+                                    engine->set_threads(thread_count);
+                                }
+                            }
+                        }
+                    }
+                }
                 else
                 {
                     continue;
