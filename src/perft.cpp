@@ -5,6 +5,7 @@
 #include "debug.hpp"
 #include "types.hpp"
 #include "movegen.hpp"
+#include "threadpool.hpp"
 
 unsigned long long Engine::perft(int depth)
 {
@@ -16,8 +17,7 @@ unsigned long long Engine::perft(int depth)
 
     for (int i = 0; i < move_list.count; i++)
     {
-        BoardState old_state = gamestate.state;
-        Mailbox old_mailbox = gamestate.mailbox;
+
         const Move current_move = move_list.moves[i];
 
         Undo undo;
@@ -49,9 +49,6 @@ unsigned long long Engine::perft_recursion(GameState& node_gamestate, int depth)
 
     generateAllMoves(gamestate, move_list);
 
-    if (depth == 0)
-        return 1;
-
     if (depth == 1)
     {
         for (int i = 0; i < move_list.count; i++)
@@ -63,7 +60,6 @@ unsigned long long Engine::perft_recursion(GameState& node_gamestate, int depth)
 
             if (gamestate.make(current_move, undo))
             {
-
                 node_count++;
                 gamestate.unmake(current_move, undo);
             }
@@ -73,8 +69,7 @@ unsigned long long Engine::perft_recursion(GameState& node_gamestate, int depth)
 
     for (int i = 0; i < move_list.count; i++)
     {
-        BoardState old_state = gamestate.state;
-        Mailbox old_mailbox = gamestate.mailbox;
+
         const Move current_move = move_list.moves[i];
 
         Undo undo;
