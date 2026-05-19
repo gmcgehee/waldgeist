@@ -25,6 +25,10 @@ public:
         gamestate = GameState();
     }
 
+    void set_threads(size_t thread_count) {
+        THREAD_COUNT = thread_count;
+    }
+
     void reset()
     {
         std::memset(pv_table, 0, 256 * sizeof(pv_table[0]));
@@ -58,6 +62,6 @@ public:
 
     unsigned long long perft(int depth);
 
-    unsigned long long perft_recursion(int depth);
+    unsigned long long perft_recursion(GameState& node_gamestate, int depth);
     
 };

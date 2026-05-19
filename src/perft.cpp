@@ -40,9 +40,16 @@ unsigned long long Engine::perft(int depth)
 
         Undo undo;
 
+        std::vector<GameState> gamestate_list(THREAD_COUNT);
+
+        for (size_t thread_i = 0; thread_i < THREAD_COUNT; thread_i++)
+        {
+            gamestate_list.push_back(GameState(gamestate));
+        }
+
         if (gamestate.make(current_move, undo))
         {
-            unsigned long long curr_move_node_count = perft_recursion(depth - 1);
+            unsigned long long curr_move_node_count = perft_recursion(gamestate, depth - 1);
             std::cout << moveToString(current_move) << ": " << curr_move_node_count << '\n';
             node_count += curr_move_node_count;
             gamestate.unmake(current_move, undo);
@@ -51,7 +58,7 @@ unsigned long long Engine::perft(int depth)
     return node_count;
 }
 
-unsigned long long Engine::perft_recursion(int depth)
+unsigned long long Engine::perft_recursion(GameState& node_gamestate, int depth)
 {
 
     unsigned long long node_count = 0;
@@ -110,7 +117,7 @@ unsigned long long Engine::perft_recursion(int depth)
 
         if (gamestate.make(current_move, undo))
         {
-            node_count += perft_recursion(depth - 1);
+            node_count += perft_recursion(gamestate, depth - 1);
             gamestate.unmake(current_move, undo);
         }
     }
