@@ -10,24 +10,6 @@ unsigned long long Engine::perft(int depth)
 {
     unsigned long long node_count = 0;
 
-    Bitboard occ = gamestate.getFullState();
-    Bitboard empty = ~occ;
-
-    Side us = gamestate.state.sideToPlay;
-    Side them = (us == WHITE) ? BLACK : WHITE;
-
-    Bitboard their_state = gamestate.getSideState(them);
-
-    Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-    Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-    Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-    Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-    Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-    Bitboard our_k_state = gamestate.state.pieces[us][KING];
-
-    u8 castling_rights = gamestate.state.castlingRights;
-    Square en_passant_square = gamestate.state.enPassantSquare;
-
     MoveList move_list{};
 
     generateAllMoves(gamestate, move_list);
@@ -62,24 +44,6 @@ unsigned long long Engine::perft_recursion(GameState& node_gamestate, int depth)
 {
 
     unsigned long long node_count = 0;
-
-    Bitboard occ = gamestate.getFullState();
-    Bitboard empty = ~occ;
-
-    Side us = gamestate.state.sideToPlay;
-    Side them = (us == WHITE) ? BLACK : WHITE;
-
-    Bitboard their_state = gamestate.getSideState(them);
-
-    Bitboard our_p_state = gamestate.state.pieces[us][PAWN];
-    Bitboard our_n_state = gamestate.state.pieces[us][KNIGHT];
-    Bitboard our_b_state = gamestate.state.pieces[us][BISHOP];
-    Bitboard our_r_state = gamestate.state.pieces[us][ROOK];
-    Bitboard our_q_state = gamestate.state.pieces[us][QUEEN];
-    Bitboard our_k_state = gamestate.state.pieces[us][KING];
-
-    u8 castling_rights = gamestate.state.castlingRights;
-    Square en_passant_square = gamestate.state.enPassantSquare;
 
     MoveList move_list{};
 
