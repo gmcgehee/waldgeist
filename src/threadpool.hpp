@@ -6,6 +6,7 @@
 #include <functional>
 #include <queue>
 #include <condition_variable>
+#include <future>
 
 // basic threadpool template from https://dev.to/ish4n10/making-a-thread-pool-in-c-from-scratch-bnm
 
@@ -24,13 +25,11 @@ public:
     ThreadPool(size_t thread_count = std::thread::hardware_concurrency());
     ~ThreadPool();
 
-    template<typename T, typename... Args>
-    auto enqueue();
+    template <typename F, typename... Args>
+    auto enqueue(F &&f, Args &&...args) -> std::future<decltype(f(args...))>;
 
-    
-    ThreadPool(ThreadPool&) = delete;
-    ThreadPool(const ThreadPool&) = delete;
-    ThreadPool& operator=(ThreadPool&&) = delete;
-    ThreadPool& operator=(const ThreadPool&) = delete;
-
+    ThreadPool(ThreadPool &) = delete;
+    ThreadPool(const ThreadPool &) = delete;
+    ThreadPool &operator=(ThreadPool &&) = delete;
+    ThreadPool &operator=(const ThreadPool &) = delete;
 };
