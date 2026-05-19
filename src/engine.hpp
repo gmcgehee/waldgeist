@@ -5,6 +5,7 @@
 
 #include "gamestate.hpp"
 #include "types.hpp"
+#include "threadpool.hpp"
 
 class Engine
 {
@@ -14,7 +15,8 @@ private:
     
     Move pv_table[256]{};
     int movetime{};
-    size_t THREAD_COUNT{1};
+    size_t THREAD_COUNT{4};
+    ThreadPool pool{THREAD_COUNT};
     std::chrono::steady_clock::time_point start_time{};
 
 public:

@@ -27,11 +27,15 @@ unsigned long long Engine::perft(int depth)
         for (size_t thread_i = 0; thread_i < THREAD_COUNT; thread_i++)
         {
             gamestate_list.push_back(GameState(gamestate));
-        }
+        }   
+
+        std::vector<unsigned long long> move_counts;
 
         if (gamestate.make(current_move, undo))
         {
             unsigned long long curr_move_node_count = perft_recursion(gamestate, depth - 1);
+            // auto future_node_count = pool.enqueue(perft_recursion, gamestate, depth - 1);
+            // this needs basically enqueue the whole make/unmake thing into the pool
             std::cout << moveToString(current_move) << ": " << curr_move_node_count << '\n';
             node_count += curr_move_node_count;
             gamestate.unmake(current_move, undo);
